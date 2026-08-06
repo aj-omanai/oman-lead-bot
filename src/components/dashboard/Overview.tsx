@@ -114,7 +114,7 @@ export function Overview({
                 key={step.title}
                 type="button"
                 onClick={() => onNavigate(i === 0 ? "scripts" : i === 5 ? "leads" : "setup")}
-                className="group flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent/60"
+                className="group flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-start transition-colors hover:bg-accent/60"
               >
                 <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
                   {i + 1}
@@ -125,7 +125,7 @@ export function Overview({
                     {step.detail}
                   </span>
                 </span>
-                <ArrowRight className="size-4 shrink-0 self-center text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                <ArrowRight className="size-4 shrink-0 self-center text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
               </button>
             ))}
           </CardContent>

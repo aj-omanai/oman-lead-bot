@@ -1,5 +1,6 @@
 import { LogoMark, Wordmark } from "@/components/brand";
 import { CodeBlock } from "@/components/CodeBlock";
+import { RtlToggle } from "@/components/RtlToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -196,13 +197,14 @@ export default function Landing() {
             </a>
           </nav>
           <div className="flex items-center gap-2">
+            <RtlToggle compact variant="ghost" />
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link to="/auth">Sign in</Link>
             </Button>
             <Button asChild className="gap-1.5">
               <Link to={DASHBOARD_URL}>
                 Open toolkit
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
           </div>
@@ -222,7 +224,7 @@ export default function Landing() {
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
             <Badge className="mb-5 rounded-full border-primary/25 bg-primary/5 px-3 py-1 text-primary">
-              <span className="mr-1.5 size-1.5 rounded-full bg-primary" />
+              <span className="me-1.5 size-1.5 rounded-full bg-primary" />
               Zero-cost · 100% free stack
             </Badge>
             <h1 className="text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
@@ -239,7 +241,7 @@ export default function Landing() {
               <Button size="lg" asChild className="gap-2 shadow-md shadow-primary/20">
                 <Link to={DASHBOARD_URL}>
                   Get the free toolkit
-                  <ArrowRight className="size-4" />
+                  <ArrowRight className="size-4 rtl:-scale-x-100" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
@@ -282,7 +284,7 @@ export default function Landing() {
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
-              className="absolute -right-3 -top-8 z-20 hidden w-64 rotate-1 rounded-xl border border-border/80 bg-card/95 p-4 shadow-xl shadow-black/5 backdrop-blur sm:block"
+              className="absolute -end-3 -top-8 z-20 hidden w-64 rotate-1 rounded-xl border border-border/80 bg-card/95 p-4 shadow-xl shadow-black/5 backdrop-blur sm:block"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold">Drafted pitch · خليجي</p>
@@ -304,7 +306,7 @@ export default function Landing() {
               initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.75, ease: "easeOut" }}
-              className="absolute -bottom-6 -left-4 z-20 hidden items-center gap-2 rounded-full border border-border/80 bg-card/95 px-4 py-2 shadow-lg shadow-black/5 backdrop-blur sm:flex"
+              className="absolute -bottom-6 -start-4 z-20 hidden items-center gap-2 rounded-full border border-border/80 bg-card/95 px-4 py-2 shadow-lg shadow-black/5 backdrop-blur sm:flex"
             >
               <Star className="size-4 fill-amber-400 text-amber-400" />
               <span className="text-sm font-semibold">4.6</span>
@@ -391,7 +393,7 @@ export default function Landing() {
           <div className="relative mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div
               aria-hidden
-              className="absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent lg:block"
+              className="absolute inset-x-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent lg:block"
             />
             {STEPS.map((step, i) => (
               <motion.div
@@ -414,7 +416,7 @@ export default function Landing() {
             <Button size="lg" asChild className="gap-2">
               <Link to={DASHBOARD_URL}>
                 Start the pipeline
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
           </motion.div>
@@ -509,7 +511,7 @@ export default function Landing() {
                 value={`faq-${i}`}
                 className="rounded-xl border border-border/80 bg-card px-5 shadow-sm"
               >
-                <AccordionTrigger className="py-4 text-left text-[15px] font-medium hover:no-underline">
+                <AccordionTrigger className="py-4 text-start text-[15px] font-medium hover:no-underline">
                   {faq.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm leading-7 text-muted-foreground">
@@ -543,7 +545,7 @@ export default function Landing() {
                 <Button size="lg" asChild className="gap-2 shadow-lg shadow-teal-500/20">
                   <Link to={DASHBOARD_URL}>
                     Get the free toolkit
-                    <ArrowRight className="size-4" />
+                    <ArrowRight className="size-4 rtl:-scale-x-100" />
                   </Link>
                 </Button>
                 <Button

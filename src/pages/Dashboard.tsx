@@ -1,6 +1,7 @@
 import { LogoMark, Wordmark } from "@/components/brand";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
 import { Overview } from "@/components/dashboard/Overview";
+import { RtlToggle } from "@/components/RtlToggle";
 import { ScriptLibrary } from "@/components/dashboard/ScriptLibrary";
 import { Settings } from "@/components/dashboard/Settings";
 import { SetupGuide } from "@/components/dashboard/SetupGuide";
@@ -56,7 +57,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* ========================= SIDEBAR (desktop) ========================= */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/70 bg-sidebar px-4 py-5 lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-border/70 bg-sidebar px-4 py-5 lg:flex">
           <div className="flex items-center gap-2.5 px-2">
             <LogoMark />
             <Wordmark />
@@ -87,6 +88,7 @@ export default function Dashboard() {
           </nav>
 
           <div className="mt-auto">
+            <RtlToggle className="mb-2 w-full justify-start" />
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
               <Avatar className="size-9">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -123,6 +125,7 @@ export default function Dashboard() {
                 <LogoMark className="size-8 rounded-lg" />
                 <Wordmark />
               </div>
+              <RtlToggle compact />
               <Button
                 type="button"
                 variant="ghost"

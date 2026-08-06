@@ -54,7 +54,7 @@ export function ScriptLibrary() {
                 type="button"
                 onClick={() => setSelectedId(file.id)}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm transition-colors",
                   file.id === selectedId
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",

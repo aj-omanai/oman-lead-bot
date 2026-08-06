@@ -8,7 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/convex/_generated/api";
+import { useRtl } from "@/hooks/use-rtl";
 import { useAction, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +21,7 @@ import {
   Cpu,
   ExternalLink,
   KeyRound,
+  Languages,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -70,6 +73,7 @@ function EnvVarChip({ name }: { name: string }) {
 }
 
 export function Settings() {
+  const { isRtl, setRtl } = useRtl();
   const status = useQuery(api.integrations.integrationStatus);
   const testProvider = useAction(api.pitch.testProvider);
   const [testing, setTesting] = useState(false);
@@ -196,13 +200,48 @@ export function Settings() {
               }
             >
               {testResult.ok ? (
-                <CheckCircle2 className="mr-2 inline size-4 text-emerald-600" />
+                <CheckCircle2 className="me-2 inline size-4 text-emerald-600" />
               ) : (
-                <Circle className="mr-2 inline size-4 text-amber-600" />
+                <Circle className="me-2 inline size-4 text-amber-600" />
               )}
               {testResult.message}
             </div>
           )}
+        </Card>
+      </motion.div>
+
+      {/* ===================== Interface direction ===================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+      >
+        <Card className="border-border/80 shadow-sm">
+          <CardContent className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Languages className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Interface direction</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {isRtl
+                    ? "العربية — the entire interface mirrors right-to-left."
+                    : "English — the entire interface reads left-to-right."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                {isRtl ? "English" : "العربية"}
+              </span>
+              <Switch
+                checked={isRtl}
+                onCheckedChange={setRtl}
+                aria-label="Toggle Arabic RTL interface"
+              />
+            </div>
+          </CardContent>
         </Card>
       </motion.div>
 
@@ -247,7 +286,7 @@ export function Settings() {
                       variant="outline"
                       className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700"
                     >
-                      <CheckCircle2 className="mr-1 size-3" />
+                      <CheckCircle2 className="me-1 size-3" />
                       Configured
                     </Badge>
                   ) : (

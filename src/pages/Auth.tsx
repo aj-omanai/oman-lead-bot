@@ -140,12 +140,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   
                   <div className="relative flex items-center gap-2">
                     <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         name="email"
                         placeholder="name@example.com"
                         type="email"
-                        className="pl-9"
+                        className="ps-9"
                         disabled={isLoading}
                         required
                       />
@@ -186,7 +186,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       onClick={handleGuestLogin}
                       disabled={isLoading}
                     >
-                      <UserX className="mr-2 h-4 w-4" />
+                      <UserX className="me-2 h-4 w-4" />
                       Continue as Guest
                     </Button>
                   </div>
@@ -253,13 +253,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
                         Verifying...
                       </>
                     ) : (
                       <>
                         Verify code
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ms-2 h-4 w-4 rtl:-scale-x-100" />
                       </>
                     )}
                   </Button>

@@ -461,12 +461,12 @@ export function LeadsWorkspace() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Search className="absolute start-2.5 top-2.5 size-4 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name, city, phone…"
-                className="h-9 w-full pl-8 sm:w-64"
+                className="h-9 w-full ps-8 sm:w-64"
               />
             </div>
             <Select value={category} onValueChange={setCategory}>

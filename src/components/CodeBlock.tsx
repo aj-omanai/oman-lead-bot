@@ -54,7 +54,7 @@ export function CodeBlock({
             <span className="size-2.5 rounded-full bg-white/15" />
             <span className="size-2.5 rounded-full bg-teal-400/60" />
           </span>
-          <span className="ml-1 font-mono text-[11px] text-white/60">
+          <span className="ms-1 font-mono text-[11px] text-white/60">
             {filename}
           </span>
         </div>
