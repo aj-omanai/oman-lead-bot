@@ -4,6 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { action } from "./_generated/server";
+import { GEMINI_MODEL, GROQ_MODEL } from "./integrations";
 
 /**
  * Live "Draft with AI" — the same personalization step the local Python
@@ -16,9 +17,6 @@ import { action } from "./_generated/server";
  *
  * Keys are read from the project's Keys / API keys settings (env vars).
  */
-
-const GROQ_MODEL = "llama-3.3-70b-versatile";
-const GEMINI_MODEL = "gemini-2.5-flash";
 
 type LeadInfo = {
   name: string;
@@ -151,6 +149,97 @@ export const generatePitch = action({
       reason: "no-key" as const,
       message:
         "No free-tier LLM key configured yet. Add GROQ_API_KEY or GEMINI_API_KEY in your project's Keys / API keys settings, then try again.",
+    };
+  },
+});
+
+/**
+ * Verify a configured free-tier key with a minimal real API call.
+ * Returns only a status + friendly message — never the key.
+ */
+type TestResult =
+  | { ok: true; provider: "groq" | "gemini"; message: string }
+  | { ok: false; provider: "groq" | "gemini" | null; message: string };
+
+export const testProvider = action({
+  args: {},
+  handler: async (ctx): Promise<TestResult> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { ok: false, provider: null, message: "Sign in to test your keys." };
+    }
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (groqKey) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: GROQ_MODEL,
+            messages: [{ role: "user", content: "Reply with the single word: OK" }],
+            max_tokens: 4,
+          }),
+        });
+        if (!res.ok) {
+          return {
+            ok: false,
+            provider: "groq",
+            message: `Groq returned ${res.status} — check that the key is valid.`,
+          };
+        }
+        return {
+          ok: true,
+          provider: "groq",
+          message: `Connected to Groq (${GROQ_MODEL}). The Draft with AI button is live.`,
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          provider: "groq",
+          message: error instanceof Error ? error.message : "Groq request failed.",
+        };
+      }
+    }
+
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Reply with the single word: OK" }] }] }),
+        });
+        if (!res.ok) {
+          return {
+            ok: false,
+            provider: "gemini",
+            message: `Gemini returned ${res.status} — check that the key is valid.`,
+          };
+        }
+        return {
+          ok: true,
+          provider: "gemini",
+          message: `Connected to Gemini (${GEMINI_MODEL}). The Draft with AI button is live.`,
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          provider: "gemini",
+          message: error instanceof Error ? error.message : "Gemini request failed.",
+        };
+      }
+    }
+
+    return {
+      ok: false,
+      provider: null,
+      message:
+        "No LLM key configured yet. Add GROQ_API_KEY or GEMINI_API_KEY in your project's Keys / API keys settings, then test again.",
     };
   },
 });

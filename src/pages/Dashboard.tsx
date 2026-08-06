@@ -2,6 +2,7 @@ import { LogoMark, Wordmark } from "@/components/brand";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
 import { Overview } from "@/components/dashboard/Overview";
 import { ScriptLibrary } from "@/components/dashboard/ScriptLibrary";
+import { Settings } from "@/components/dashboard/Settings";
 import { SetupGuide } from "@/components/dashboard/SetupGuide";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,18 +16,20 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  Settings as SettingsIcon,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export type TabId = "overview" | "scripts" | "setup" | "leads";
+export type TabId = "overview" | "scripts" | "setup" | "leads" | "settings";
 
 const NAV: Array<{ id: TabId; label: string; icon: typeof Users }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "scripts", label: "Script Library", icon: FileCode2 },
   { id: "setup", label: "Setup Guide", icon: ListChecks },
   { id: "leads", label: "Leads", icon: Users },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export default function Dashboard() {
@@ -161,6 +164,7 @@ export default function Dashboard() {
             {tab === "scripts" && <ScriptLibrary />}
             {tab === "setup" && <SetupGuide />}
             {tab === "leads" && <LeadsWorkspace />}
+            {tab === "settings" && <Settings />}
           </motion.main>
         </div>
       </div>
