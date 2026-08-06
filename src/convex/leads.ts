@@ -167,3 +167,84 @@ export const setStatus = mutation({
     await ctx.db.patch(args.id, { status: args.status });
   },
 });
+
+/** Fetch one lead, but only if it belongs to the signed-in user. */
+export const getLead = query({
+  args: { id: v.id("leads") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return null;
+    return lead;
+  },
+});
+
+/** Save a generated pitch and move the lead to the "drafted" stage. */
+export const setPitch = mutation({
+  args: { id: v.id("leads"), pitch: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, { pitch: args.pitch, status: "drafted" });
+  },
+});
+
+/**
+ * Import leads from the user's local pipeline (e.g. leads.csv). Dedupes by
+ * (name, phone) per user, mirroring storage.save_leads in the Python toolkit.
+ */
+export const importLeads = mutation({
+  args: {
+    leads: v.array(
+      v.object({
+        name: v.string(),
+        phone: v.string(),
+        rating: v.optional(v.number()),
+        reviews: v.optional(v.number()),
+        city: v.optional(v.string()),
+        category: v.optional(v.string()),
+        source: v.optional(v.string()),
+        pitch: v.optional(v.string()),
+        status: v.optional(
+          v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
+        ),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { inserted: 0 };
+    if (args.leads.length > 500) {
+      throw new Error("Max 500 leads per import.");
+    }
+
+    let inserted = 0;
+    for (const row of args.leads) {
+      const name = row.name.trim();
+      if (name.length < 2) continue;
+      const existing = await ctx.db
+        .query("leads")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .filter((q) => q.eq(q.field("name"), name) && q.eq(q.field("phone"), row.phone))
+        .first();
+      if (existing) continue;
+      await ctx.db.insert("leads", {
+        userId,
+        name,
+        phone: row.phone,
+        rating: row.rating ?? 0,
+        reviews: row.reviews ?? 0,
+        city: row.city ?? "",
+        category: row.category ?? "General",
+        source: row.source ?? "CSV import",
+        pitch: row.pitch,
+        status: row.status ?? "new",
+      });
+      inserted += 1;
+    }
+    return { inserted };
+  },
+});

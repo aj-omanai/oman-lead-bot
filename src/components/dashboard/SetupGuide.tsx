@@ -11,14 +11,14 @@ const API_KEYS = [
     free: "Free tier · AI Studio",
     url: "https://aistudio.google.com/apikey",
     env: "GEMINI_API_KEY",
-    note: "The default provider. Paste the key into config.py — the toolkit is a local script, so there are no server env vars to configure.",
+    note: "The default provider. Paste the key into config.py for the local pipeline — and into your project's Keys / API keys settings as GEMINI_API_KEY to unlock the live 'Draft with AI' button in the Leads tab.",
   },
   {
     name: "Groq",
     free: "Free tier · no credit card",
     url: "https://console.groq.com/keys",
     env: "GROQ_API_KEY",
-    note: "Alternative provider with open-weight models. Set LLM_PROVIDER = \"groq\" in config.py to switch.",
+    note: "Alternative provider with open-weight models. Set LLM_PROVIDER = \"groq\" in config.py to switch, and add GROQ_API_KEY in your project's Keys / API keys settings for the live 'Draft with AI' button.",
   },
 ];
 

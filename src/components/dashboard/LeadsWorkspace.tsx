@@ -33,13 +33,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Check, Copy, Inbox, MessageSquare, Search, Star } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  FileUp,
+  Inbox,
+  Loader2,
+  MessageSquare,
+  Search,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type Lead = Doc<"leads">;
 type Status = Lead["status"];
@@ -57,12 +70,33 @@ const STATUS_STYLE: Record<Status, { label: string; className: string }> = {
 
 function PitchDialog({ lead }: { lead: Lead }) {
   const [copied, setCopied] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
   const setStatus = useMutation(api.leads.setStatus);
+  const setPitch = useMutation(api.leads.setPitch);
+  const generatePitch = useAction(api.pitch.generatePitch);
 
   const copyPitch = async () => {
     await navigator.clipboard.writeText(lead.pitch ?? "");
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleDraft = async () => {
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const result = await generatePitch({ leadId: lead._id });
+      if (result.ok) {
+        await setPitch({ id: lead._id, pitch: result.pitch });
+      } else {
+        setDraftError(result.message);
+      }
+    } catch (error) {
+      setDraftError(error instanceof Error ? error.message : "Failed to draft the pitch.");
+    } finally {
+      setDrafting(false);
+    }
   };
 
   return (
@@ -82,6 +116,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
             Drafted Gulf Arabic pitch · {lead.city}
           </DialogDescription>
         </DialogHeader>
+
         {lead.pitch ? (
           <div className="rounded-xl border border-border/80 bg-muted/40 p-4">
             <p
@@ -93,27 +128,270 @@ function PitchDialog({ lead }: { lead: Lead }) {
             </p>
           </div>
         ) : (
-          <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-            No pitch yet — run{" "}
+          <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+            No pitch yet. Draft one right here with your free LLM key, or run{" "}
             <span className="font-mono text-foreground">python main.py</span>{" "}
-            locally to draft one for this lead.
-          </p>
+            locally and import the output as CSV.
+          </div>
         )}
+
+        {drafting && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+            <Loader2 className="size-4 animate-spin" />
+            Writing your خليجي pitch…
+          </div>
+        )}
+        {draftError && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-800">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <span>{draftError}</span>
+          </div>
+        )}
+
         <DialogFooter className="gap-2 sm:justify-between">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyPitch} disabled={!lead.pitch}>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyPitch}
+              disabled={!lead.pitch || drafting}
+            >
               {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
               {copied ? "Copied" : "Copy pitch"}
             </Button>
+            {lead.pitch && (
+              <Button variant="outline" size="sm" onClick={handleDraft} disabled={drafting}>
+                {drafting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4 text-primary" />
+                )}
+                Re-draft with AI
+              </Button>
+            )}
           </div>
-          {lead.pitch && lead.status !== "sent" && (
-            <Button
-              size="sm"
-              onClick={() => void setStatus({ id: lead._id, status: "sent" })}
-            >
-              Mark as sent
+          {!lead.pitch ? (
+            <Button size="sm" onClick={handleDraft} disabled={drafting} className="gap-1.5">
+              {drafting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              Draft with AI
             </Button>
+          ) : (
+            lead.status !== "sent" && (
+              <Button
+                size="sm"
+                onClick={() => void setStatus({ id: lead._id, status: "sent" })}
+              >
+                Mark as sent
+              </Button>
+            )
           )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface CsvLead {
+  name: string;
+  phone: string;
+  rating?: number;
+  reviews?: number;
+  city?: string;
+  category?: string;
+  source?: string;
+  pitch?: string;
+  status?: "new" | "drafted" | "sent";
+}
+
+const HEADER_ALIASES: Record<string, keyof CsvLead> = {
+  name: "name",
+  company: "name",
+  business: "name",
+  phone: "phone",
+  telephone: "phone",
+  tel: "phone",
+  rating: "rating",
+  stars: "rating",
+  reviews: "reviews",
+  reviewcount: "reviews",
+  city: "city",
+  town: "city",
+  category: "category",
+  sector: "category",
+  source: "source",
+  sourceurl: "source",
+  pitch: "pitch",
+  message: "pitch",
+  status: "status",
+};
+
+function splitCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ",") {
+      cells.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  cells.push(cur);
+  return cells.map((c) => c.trim());
+}
+
+const VALID_STATUSES = new Set(["new", "drafted", "sent"]);
+
+function parseCsv(text: string): { leads: CsvLead[]; skipped: number } {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const leads: CsvLead[] = [];
+  let skipped = 0;
+
+  if (lines.length === 0) return { leads, skipped };
+
+  const header = splitCsvLine(lines[0]).map((h) =>
+    h.toLowerCase().replace(/[^a-z]/g, ""),
+  );
+  const fields = header.map((h) => HEADER_ALIASES[h] ?? null);
+
+  for (const line of lines.slice(1)) {
+    const cells = splitCsvLine(line);
+    const lead: CsvLead = { name: "", phone: "" };
+    let hasData = false;
+    fields.forEach((field, i) => {
+      if (!field || !cells[i]) return;
+      hasData = true;
+      const value = cells[i];
+      if (field === "rating" || field === "reviews") {
+        const num = Number.parseFloat(value);
+        if (!Number.isNaN(num)) lead[field] = num;
+      } else if (field === "status") {
+        if (VALID_STATUSES.has(value)) lead.status = value as CsvLead["status"];
+      } else if (
+        field === "name" ||
+        field === "phone" ||
+        field === "city" ||
+        field === "category" ||
+        field === "source" ||
+        field === "pitch"
+      ) {
+        lead[field] = value;
+      }
+    });
+    if (!hasData || lead.name.length < 2) {
+      skipped += 1;
+      continue;
+    }
+    leads.push(lead);
+    if (leads.length >= 500) break;
+  }
+  return { leads, skipped };
+}
+
+function ImportCsvDialog() {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const importLeads = useMutation(api.leads.importLeads);
+
+  const parsed = useMemo(() => (text.trim() ? parseCsv(text) : null), [text]);
+  const previewCount = parsed?.leads.length ?? 0;
+
+  const handleImport = async () => {
+    if (!parsed || previewCount === 0) {
+      setError("No valid rows found — make sure the first line is a header with a 'name' column.");
+      return;
+    }
+    setImporting(true);
+    setError(null);
+    try {
+      const result = await importLeads({ leads: parsed.leads });
+      toast.success(
+        `Imported ${result.inserted} new lead${result.inserted === 1 ? "" : "s"}`,
+        { description: "Duplicates were skipped automatically." },
+      );
+      setOpen(false);
+      setText("");
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Import failed.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <FileUp className="size-4" />
+          Import CSV
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileUp className="size-4 text-primary" />
+            Import leads from your pipeline
+          </DialogTitle>
+          <DialogDescription>
+            Paste the contents of your local <span className="font-mono">leads.csv</span>{" "}
+            (or any sheet) — rows are deduped by name + phone.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={'name,phone,rating,reviews,city,category,source,pitch,status\n"Al Batinah Marine",+968 2470 1234,4.4,128,"Muscat, Oman",Marine equipment,",Oman directory",,new'}
+          className="h-44 resize-none font-mono text-xs leading-5"
+        />
+        <p className="text-xs leading-5 text-muted-foreground">
+          Headers are matched flexibly (name/company/business, phone/telephone, …).
+          Only <span className="font-mono">name</span> is required.
+        </p>
+
+        {parsed && (
+          <p className="text-xs text-muted-foreground">
+            {previewCount} row{previewCount === 1 ? "" : "s"} ready to import
+            {parsed.skipped > 0 && ` · ${parsed.skipped} skipped (missing name)`}
+            {previewCount >= 500 && " · capped at 500 per import"}
+          </p>
+        )}
+        {error && (
+          <p className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-5 text-amber-800">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+            {error}
+          </p>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={importing}>
+            Cancel
+          </Button>
+          <Button onClick={handleImport} disabled={importing || previewCount === 0} className="gap-1.5">
+            {importing ? <Loader2 className="size-4 animate-spin" /> : <FileUp className="size-4" />}
+            Import {previewCount || ""} lead{previewCount === 1 ? "" : "s"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -161,12 +439,16 @@ export function LeadsWorkspace() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Leads workspace</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Demo data from a real-style Oman &amp; GCC scrape. Cycle statuses, view
-          pitches, and track what you've sent.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Leads workspace</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Demo data from a real-style Oman &amp; GCC scrape. Draft pitches live
+            with your free LLM key, import your own <span className="font-mono">leads.csv</span>,
+            and track what you've sent.
+          </p>
+        </div>
+        <ImportCsvDialog />
       </div>
 
       <Card className="border-border/80 shadow-sm">
@@ -297,6 +579,7 @@ export function LeadsWorkspace() {
         <CardFooter className="border-t px-6 py-3">
           <p className="text-xs text-muted-foreground">
             Click a status badge to move it through the pipeline: new → drafted → sent.
+            The "Draft with AI" button uses your free Groq or Gemini key.
           </p>
         </CardFooter>
       </Card>

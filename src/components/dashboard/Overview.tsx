@@ -178,9 +178,16 @@ export function Overview({
               </div>
             ))}
             <div className="mt-1 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
-              <span className="font-medium text-foreground">Tip:</span> import
-              leads from your local <span className="font-mono">leads.csv</span>{" "}
-              to replace the demo data with real pipeline output.
+              <span className="font-medium text-foreground">Tip:</span> bring
+              your real pipeline output in with{" "}
+              <button
+                type="button"
+                onClick={() => onNavigate("leads")}
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Import CSV
+              </button>{" "}
+              in the Leads tab — rows are deduped by name and phone.
             </div>
           </CardContent>
         </Card>
