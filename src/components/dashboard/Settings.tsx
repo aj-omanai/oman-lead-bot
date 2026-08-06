@@ -74,6 +74,7 @@ function EnvVarChip({ name }: { name: string }) {
 
 export function Settings() {
   const { isRtl, setRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   const status = useQuery(api.integrations.integrationStatus);
   const testProvider = useAction(api.pitch.testProvider);
   const [testing, setTesting] = useState(false);
@@ -106,11 +107,14 @@ export function Settings() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("Settings", "الإعدادات")}
+        </h1>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Manage the free LLM integrations behind the "Draft with AI" button.
-          Keys live in your project's secure Keys settings — this page only
-          shows whether they're configured.
+          {t(
+            "Manage the free LLM integrations behind the \"Draft with AI\" button. Keys live in your project's secure Keys settings — this page only shows whether they're configured.",
+            "تحكم في تكاملات الذكاء الاصطناعي المجانية خلف زر \"الصياغة بالذكاء الاصطناعي\". المفاتيح محفوظة في إعدادات المفاتيح الآمنة لمشروعك — هذه الصفحة تعرض فقط هل هي مُعدّة أم لا.",
+          )}
         </p>
       </div>
 
@@ -140,39 +144,48 @@ export function Settings() {
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h2 className="text-base font-semibold">LLM provider status</h2>
+                  <h2 className="text-base font-semibold">
+                    {t("LLM provider status", "حالة مزود الذكاء الاصطناعي")}
+                  </h2>
                   {status === undefined ? (
                     <Badge variant="outline" className="rounded-full text-muted-foreground">
-                      Checking…
+                      {t("Checking…", "جارٍ الفحص…")}
                     </Badge>
                   ) : configured ? (
                     <Badge
                       variant="outline"
                       className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700"
                     >
-                      Connected
+                      {t("Connected", "متصل")}
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
                       className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700"
                     >
-                      Not configured
+                      {t("Not configured", "غير مُعد")}
                     </Badge>
                   )}
                 </div>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   {status === undefined
-                    ? "Loading your integration status…"
+                    ? t("Loading your integration status…", "جارٍ تحميل حالة التكامل…")
                     : configured
-                      ? `The Draft with AI button will use ${
-                          activeProvider === "groq" ? "Groq" : "Gemini"
-                        } (${status.activeModel}).`
-                      : "Add a free key below to unlock live pitch drafting in the Leads tab."}
+                      ? `${t(
+                          "The Draft with AI button will use",
+                          "زر الصياغة بالذكاء الاصطناعي سيستخدم",
+                        )} ${activeProvider === "groq" ? "Groq" : "Gemini"} (${status.activeModel}).`
+                      : t(
+                          "Add a free key below to unlock live pitch drafting in the Leads tab.",
+                          "أضف مفتاحاً مجانياً أدناه لتفعيل الصياغة المباشرة في تبويب العملاء.",
+                        )}
                 </p>
                 {status && configured && status.providers.groq && status.providers.gemini && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Both keys are set — Groq takes priority (fastest for drafts).
+                    {t(
+                      "Both keys are set — Groq takes priority (fastest for drafts).",
+                      "تم إعداد المفتاحين — Groq له الأولوية (الأسرع للصياغة).",
+                    )}
                   </p>
                 )}
               </div>
@@ -188,7 +201,9 @@ export function Settings() {
               ) : (
                 <RefreshCw className="size-4" />
               )}
-              {testing ? "Testing…" : "Test connection"}
+              {testing
+                ? t("Testing…", "جارٍ الاختبار…")
+                : t("Test connection", "اختبار الاتصال")}
             </Button>
           </CardContent>
           {testResult && (
@@ -223,7 +238,9 @@ export function Settings() {
                 <Languages className="size-5" />
               </div>
               <div>
-                <h2 className="text-base font-semibold">Interface direction</h2>
+                <h2 className="text-base font-semibold">
+                  {t("Interface direction", "اتجاه الواجهة")}
+                </h2>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   {isRtl
                     ? "العربية — the entire interface mirrors right-to-left."
@@ -287,11 +304,11 @@ export function Settings() {
                       className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700"
                     >
                       <CheckCircle2 className="me-1 size-3" />
-                      Configured
+                      {t("Configured", "مُعد")}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="rounded-full text-muted-foreground">
-                      Not configured
+                      {t("Not configured", "غير مُعد")}
                     </Badge>
                   )}
                 </CardHeader>
@@ -329,11 +346,13 @@ export function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <KeyRound className="size-4 text-primary" />
-              Add your free key — 3 steps
+              {t("Add your free key — 3 steps", "أضف مفتاحك المجاني — 3 خطوات")}
             </CardTitle>
             <CardDescription>
-              The app never stores keys; it reads them from your project's secure
-              Keys / API keys settings.
+              {t(
+                "The app never stores keys; it reads them from your project's secure Keys / API keys settings.",
+                "التطبيق لا يخزن المفاتيح أبداً؛ يقرأها من إعدادات المفاتيح الآمنة لمشروعك.",
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -381,11 +400,14 @@ export function Settings() {
                     <ShieldCheck className="size-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Your keys stay private</p>
+                    <p className="text-sm font-semibold">
+                      {t("Your keys stay private", "مفاتيحك تبقى خاصة")}
+                    </p>
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      The in-app status check only reports whether a key is
-                      present — it never reads, stores, or displays the key
-                      itself. All LLM calls run server-side.
+                      {t(
+                        "The in-app status check only reports whether a key is present — it never reads, stores, or displays the key itself. All LLM calls run server-side.",
+                        "فحص الحالة داخل التطبيق يعرض فقط هل المفتاح موجود — ولا يقرأ المفتاح أو يخزنه أو يعرضه أبداً. جميع استدعاءات الذكاء الاصطناعي تتم من جهة الخادم.",
+                      )}
                     </p>
                   </div>
                 </div>

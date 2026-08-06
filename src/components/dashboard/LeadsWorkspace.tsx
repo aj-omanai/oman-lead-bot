@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useRtl } from "@/hooks/use-rtl";
 import { cn } from "@/lib/utils";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
@@ -59,16 +60,30 @@ type Status = Lead["status"];
 
 const STATUS_ORDER: Status[] = ["new", "drafted", "sent"];
 
-const STATUS_STYLE: Record<Status, { label: string; className: string }> = {
-  new: { label: "New", className: "border-border bg-muted text-muted-foreground" },
+const STATUS_STYLE: Record<
+  Status,
+  { label: string; labelAr: string; className: string }
+> = {
+  new: {
+    label: "New",
+    labelAr: "جديد",
+    className: "border-border bg-muted text-muted-foreground",
+  },
   drafted: {
     label: "Drafted",
+    labelAr: "مسودة",
     className: "border-primary/25 bg-primary/10 text-primary",
   },
-  sent: { label: "Sent", className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700" },
+  sent: {
+    label: "Sent",
+    labelAr: "مرسل",
+    className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
+  },
 };
 
 function PitchDialog({ lead }: { lead: Lead }) {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   const [copied, setCopied] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
@@ -103,7 +118,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-          View
+          {t("View", "عرض")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -113,7 +128,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
             {lead.name}
           </DialogTitle>
           <DialogDescription>
-            Drafted Gulf Arabic pitch · {lead.city}
+            {t("Drafted Gulf Arabic pitch", "مسودة رسالة بالعربية الخليجية")} · {lead.city}
           </DialogDescription>
         </DialogHeader>
 
@@ -129,9 +144,12 @@ function PitchDialog({ lead }: { lead: Lead }) {
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-            No pitch yet. Draft one right here with your free LLM key, or run{" "}
+            {t(
+              "No pitch yet. Draft one right here with your free LLM key, or run",
+              "لا توجد رسالة بعد. صمغها الآن بمفتاح LLM المجاني، أو شغّل",
+            )}{" "}
             <span className="font-mono text-foreground">python main.py</span>{" "}
-            locally and import the output as CSV.
+            {t("locally and import the output as CSV.", "محلياً واستورد الناتج كملف CSV.")}
           </div>
         )}
 
@@ -157,7 +175,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
               disabled={!lead.pitch || drafting}
             >
               {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
-              {copied ? "Copied" : "Copy pitch"}
+              {copied ? t("Copied", "تم النسخ") : t("Copy pitch", "نسخ الرسالة")}
             </Button>
             {lead.pitch && (
               <Button variant="outline" size="sm" onClick={handleDraft} disabled={drafting}>
@@ -166,7 +184,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
                 ) : (
                   <Sparkles className="size-4 text-primary" />
                 )}
-                Re-draft with AI
+                {t("Re-draft with AI", "إعادة الصياغة بالذكاء الاصطناعي")}
               </Button>
             )}
           </div>
@@ -177,7 +195,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
               ) : (
                 <Sparkles className="size-4" />
               )}
-              Draft with AI
+              {t("Draft with AI", "صياغة بالذكاء الاصطناعي")}
             </Button>
           ) : (
             lead.status !== "sent" && (
@@ -185,7 +203,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
                 size="sm"
                 onClick={() => void setStatus({ id: lead._id, status: "sent" })}
               >
-                Mark as sent
+                {t("Mark as sent", "تحديد كمرسلة")}
               </Button>
             )
           )}
@@ -308,6 +326,8 @@ function parseCsv(text: string): { leads: CsvLead[]; skipped: number } {
 }
 
 function ImportCsvDialog() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [importing, setImporting] = useState(false);
@@ -344,7 +364,7 @@ function ImportCsvDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <FileUp className="size-4" />
-          Import CSV
+          {t("Import CSV", "استيراد CSV")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
@@ -354,8 +374,15 @@ function ImportCsvDialog() {
             Import leads from your pipeline
           </DialogTitle>
           <DialogDescription>
-            Paste the contents of your local <span className="font-mono">leads.csv</span>{" "}
-            (or any sheet) — rows are deduped by name + phone.
+            {t(
+              "Paste the contents of your local",
+              "الصق محتوى ملف",
+            )}{" "}
+            <span className="font-mono">leads.csv</span>{" "}
+            {t(
+              "(or any sheet) — rows are deduped by name + phone.",
+              "(أو أي جدول) — تتم إزالة التكرار حسب الاسم والهاتف.",
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -386,7 +413,7 @@ function ImportCsvDialog() {
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={importing}>
-            Cancel
+            {t("Cancel", "إلغاء")}
           </Button>
           <Button onClick={handleImport} disabled={importing || previewCount === 0} className="gap-1.5">
             {importing ? <Loader2 className="size-4 animate-spin" /> : <FileUp className="size-4" />}
@@ -399,6 +426,8 @@ function ImportCsvDialog() {
 }
 
 export function LeadsWorkspace() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   const leads = useQuery(api.leads.list);
   const seed = useMutation(api.leads.seed);
   const setStatus = useMutation(api.leads.setStatus);
@@ -441,11 +470,16 @@ export function LeadsWorkspace() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leads workspace</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("Leads workspace", "مساحة العملاء المحتملين")}
+          </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Demo data from a real-style Oman &amp; GCC scrape. Draft pitches live
-            with your free LLM key, import your own <span className="font-mono">leads.csv</span>,
-            and track what you've sent.
+            {t(
+              "Demo data from a real-style Oman & GCC scrape. Draft pitches live with your free LLM key, import your own",
+              "بيانات تجريبية بأسلوب كشط حقيقي لسلطنة عُمان والخليج. اصمغ الرسائل مباشرة بمفتاح LLM المجاني، واستورد ملف",
+            )}{" "}
+            <span className="font-mono">leads.csv</span>
+            {t(", and track what you've sent.", "، وتابع ما أرسلته.")}
           </p>
         </div>
         <ImportCsvDialog />
@@ -454,9 +488,11 @@ export function LeadsWorkspace() {
       <Card className="border-border/80 shadow-sm">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle className="text-base">Collected leads</CardTitle>
+            <CardTitle className="text-base">
+              {t("Collected leads", "العمليات التي تم جمعها")}
+            </CardTitle>
             <CardDescription>
-              {filtered.length} of {leads?.length ?? 0} shown
+              {filtered.length} {t("of", "من")} {leads?.length ?? 0} {t("shown", "معروض")}
             </CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -465,7 +501,7 @@ export function LeadsWorkspace() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search name, city, phone…"
+                placeholder={t("Search name, city, phone…", "ابحث بالاسم، المدينة، الهاتف…")}
                 className="h-9 w-full ps-8 sm:w-64"
               />
             </div>
@@ -474,7 +510,7 @@ export function LeadsWorkspace() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">{t("All categories", "كل القطاعات")}</SelectItem>
                 {categories.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
@@ -564,7 +600,9 @@ export function LeadsWorkspace() {
                               STATUS_STYLE[lead.status].className,
                             )}
                           >
-                            {STATUS_STYLE[lead.status].label}
+                            {isRtl
+                              ? STATUS_STYLE[lead.status].labelAr
+                              : STATUS_STYLE[lead.status].label}
                           </Badge>
                         </button>
                       </TableCell>
@@ -578,8 +616,10 @@ export function LeadsWorkspace() {
 
         <CardFooter className="border-t px-6 py-3">
           <p className="text-xs text-muted-foreground">
-            Click a status badge to move it through the pipeline: new → drafted → sent.
-            The "Draft with AI" button uses your free Groq or Gemini key.
+            {t(
+              "Click a status badge to move it through the pipeline: new → drafted → sent. The \"Draft with AI\" button uses your free Groq or Gemini key.",
+              "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل. زر \"الصياغة بالذكاء الاصطناعي\" يستخدم مفتاح Groq أو Gemini المجاني.",
+            )}
           </p>
         </CardFooter>
       </Card>

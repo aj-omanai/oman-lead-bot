@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
+import { useRtl } from "@/hooks/use-rtl";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
@@ -25,16 +26,23 @@ import { useNavigate } from "react-router";
 
 export type TabId = "overview" | "scripts" | "setup" | "leads" | "settings";
 
-const NAV: Array<{ id: TabId; label: string; icon: typeof Users }> = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "scripts", label: "Script Library", icon: FileCode2 },
-  { id: "setup", label: "Setup Guide", icon: ListChecks },
-  { id: "leads", label: "Leads", icon: Users },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
+const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users }> = [
+  { id: "overview", label: "Overview", labelAr: "نظرة عامة", icon: LayoutDashboard },
+  { id: "scripts", label: "Script Library", labelAr: "مكتبة السكربتات", icon: FileCode2 },
+  { id: "setup", label: "Setup Guide", labelAr: "دليل الإعداد", icon: ListChecks },
+  { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
+  { id: "settings", label: "Settings", labelAr: "الإعدادات", icon: SettingsIcon },
 ];
+
+const SIGN_OUT_LABEL = { en: "Sign out", ar: "تسجيل الخروج" };
+
+function labelFor(isRtl: boolean, pair: { en: string; ar: string }): string {
+  return isRtl ? pair.ar : pair.en;
+}
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { isRtl } = useRtl();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabId>("overview");
   const leads = useQuery(api.leads.list);
@@ -82,7 +90,7 @@ export default function Dashboard() {
                     tab === item.id ? "text-primary" : "text-muted-foreground",
                   )}
                 />
-                {item.label}
+                {isRtl ? item.labelAr : item.label}
               </button>
             ))}
           </nav>
@@ -111,7 +119,7 @@ export default function Dashboard() {
               className="mt-2 w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
             >
               <LogOut className="size-4" />
-              Sign out
+              {labelFor(isRtl, SIGN_OUT_LABEL)}
             </Button>
           </div>
         </aside>
@@ -150,7 +158,7 @@ export default function Dashboard() {
                   )}
                 >
                   <item.icon className="size-3.5" />
-                  {item.label}
+                  {isRtl ? item.labelAr : item.label}
                 </button>
               ))}
             </nav>

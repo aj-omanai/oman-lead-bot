@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { useRtl } from "@/hooks/use-rtl";
 import { QUICKSTART_STEPS } from "@/lib/toolkit";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -30,31 +31,33 @@ export function Overview({
   const avgRating = leads?.length
     ? (leads.reduce((sum, l) => sum + l.rating, 0) / leads.length).toFixed(1)
     : "—";
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
 
   const stats = [
     {
       icon: Users,
-      label: "Leads collected",
+      label: t("Leads collected", "العمليات المحتملة"),
       value: total,
-      hint: "in your workspace",
+      hint: t("in your workspace", "في مساحة عملك"),
     },
     {
       icon: Bot,
-      label: "Pitches drafted",
+      label: t("Pitches drafted", "المسودات الجاهزة"),
       value: drafted,
-      hint: "ready for review",
+      hint: t("ready for review", "جاهزة للمراجعة"),
     },
     {
       icon: Send,
-      label: "Marked sent",
+      label: t("Marked sent", "تم إرسالها"),
       value: sent,
-      hint: "follow up wisely",
+      hint: t("follow up wisely", "تابع بحكمة"),
     },
     {
       icon: Star,
-      label: "Avg. rating",
+      label: t("Avg. rating", "متوسط التقييم"),
       value: avgRating,
-      hint: "across all leads",
+      hint: t("across all leads", "لكل العمليات"),
     },
   ];
 
@@ -64,9 +67,14 @@ export function Overview({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pipeline overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("Pipeline overview", "نظرة عامة على خط الإنتاج")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your lead workspace — scrape locally, review here, send from the scripts.
+          {t(
+            "Your lead workspace — scrape locally, review here, send from the scripts.",
+            "مساحة عمل العمليات — اكشط محلياً، راجع هنا، وأرسل من السكربتات.",
+          )}
         </p>
       </div>
 
@@ -103,9 +111,11 @@ export function Overview({
         {/* Quick start checklist */}
         <Card className="border-border/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">Quick start</CardTitle>
+            <CardTitle className="text-base">
+              {t("Quick start", "البدء السريع")}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
-              From zero to first pitch in six steps.
+              {t("From zero to first pitch in six steps.", "من الصفر إلى أول رسالة في ست خطوات.")}
             </p>
           </CardHeader>
           <CardContent className="flex flex-col gap-1">
@@ -134,16 +144,18 @@ export function Overview({
         {/* Pipeline stages */}
         <Card className="border-border/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base">Pipeline at a glance</CardTitle>
+            <CardTitle className="text-base">
+              {t("Pipeline at a glance", "المراحل بلمحة")}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Where your leads sit right now.
+              {t("Where your leads sit right now.", "أين توجد عملياتك الآن.")}
             </p>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             {[
-              { label: "New", value: newLeads, icon: Circle },
-              { label: "Drafted", value: drafted, icon: CheckCircle2 },
-              { label: "Sent", value: sent, icon: Send },
+              { label: t("New", "جديد"), value: newLeads, icon: Circle },
+              { label: t("Drafted", "مسودة"), value: drafted, icon: CheckCircle2 },
+              { label: t("Sent", "مرسل"), value: sent, icon: Send },
             ].map((stage) => (
               <div key={stage.label}>
                 <div className="mb-1.5 flex items-center justify-between text-sm">
@@ -151,9 +163,9 @@ export function Overview({
                     <stage.icon
                       className={cn(
                         "size-4",
-                        stage.label === "New" && "text-muted-foreground",
-                        stage.label === "Drafted" && "text-primary",
-                        stage.label === "Sent" && "text-emerald-600",
+                        stage.label === t("New", "جديد") && "text-muted-foreground",
+                        stage.label === t("Drafted", "مسودة") && "text-primary",
+                        stage.label === t("Sent", "مرسل") && "text-emerald-600",
                       )}
                     />
                     {stage.label}
@@ -169,25 +181,33 @@ export function Overview({
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className={cn(
                       "h-full rounded-full",
-                      stage.label === "New" && "bg-muted-foreground/50",
-                      stage.label === "Drafted" && "bg-primary",
-                      stage.label === "Sent" && "bg-emerald-500",
+                      stage.label === t("New", "جديد") && "bg-muted-foreground/50",
+                      stage.label === t("Drafted", "مسودة") && "bg-primary",
+                      stage.label === t("Sent", "مرسل") && "bg-emerald-500",
                     )}
                   />
                 </div>
               </div>
             ))}
             <div className="mt-1 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
-              <span className="font-medium text-foreground">Tip:</span> bring
-              your real pipeline output in with{" "}
+              <span className="font-medium text-foreground">
+                {t("Tip:", "نصيحة:")}
+              </span>{" "}
+              {t(
+                "bring your real pipeline output in with",
+                "أدخل نتائج خط الإنتاج الحقيقية عبر",
+              )}{" "}
               <button
                 type="button"
                 onClick={() => onNavigate("leads")}
                 className="font-medium text-primary underline-offset-2 hover:underline"
               >
-                Import CSV
+                {t("Import CSV", "استيراد CSV")}
               </button>{" "}
-              in the Leads tab — rows are deduped by name and phone.
+              {t(
+                "in the Leads tab — rows are deduped by name and phone.",
+                "في تبويب العملاء — تتم إزالة التكرار حسب الاسم والهاتف.",
+              )}
             </div>
           </CardContent>
         </Card>

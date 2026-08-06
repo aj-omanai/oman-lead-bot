@@ -1,6 +1,7 @@
 import { CodeBlock } from "@/components/CodeBlock";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRtl } from "@/hooks/use-rtl";
 import { QUICKSTART_STEPS } from "@/lib/toolkit";
 import { motion } from "framer-motion";
 import { ExternalLink, KeyRound } from "lucide-react";
@@ -23,13 +24,19 @@ const API_KEYS = [
 ];
 
 export function SetupGuide() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Setup guide</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("Setup guide", "دليل الإعداد")}
+        </h1>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-          The toolkit runs on your own machine — it's a local Python project.
-          Everything here mirrors the README you downloaded, step by step.
+          {t(
+            "The toolkit runs on your own machine — it's a local Python project. Everything here mirrors the README you downloaded, step by step.",
+            "يعمل السكربت على جهازك الخاص — إنه مشروع بايثون محلي. كل ما هنا يطابق ملف README الذي حمّلته، خطوة بخطوة.",
+          )}
         </p>
       </div>
 
@@ -65,7 +72,7 @@ export function SetupGuide() {
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                 >
-                  Get a free key
+                  {t("Get a free key", "احصل على مفتاح مجاني")}
                   <ExternalLink className="size-3.5" />
                 </a>
               </CardContent>
@@ -107,7 +114,9 @@ export function SetupGuide() {
 
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm">
         <CardContent className="p-6">
-          <h3 className="text-sm font-semibold">Before you send anything</h3>
+          <h3 className="text-sm font-semibold">
+            {t("Before you send anything", "قبل أن ترسل أي شيء")}
+          </h3>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
             <li>· Review every draft pitch — the LLM is fast, not infallible.</li>
             <li>· Keep runs small: the script caps at{" "}

@@ -3,12 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TOOLKIT_FILES } from "@/lib/toolkit";
+import { useRtl } from "@/hooks/use-rtl";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Download, FileCode2 } from "lucide-react";
 import { useState } from "react";
 
 export function ScriptLibrary() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
   const [selectedId, setSelectedId] = useState(TOOLKIT_FILES[0].id);
   const selected = TOOLKIT_FILES.find((f) => f.id === selectedId)!;
 
@@ -30,14 +33,19 @@ export function ScriptLibrary() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Script library</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("Script library", "مكتبة السكربتات")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            The complete, runnable Python toolkit — copy or download each file.
+            {t(
+              "The complete, runnable Python toolkit — copy or download each file.",
+              "مجموعة بايثون الكاملة القابلة للتشغيل — انسخ أو حمّل كل ملف.",
+            )}
           </p>
         </div>
         <Button variant="outline" onClick={downloadAll} className="gap-2">
           <Download className="size-4" />
-          Download all
+          {t("Download all", "تحميل الكل")}
         </Button>
       </div>
 
