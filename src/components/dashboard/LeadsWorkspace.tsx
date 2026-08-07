@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
@@ -51,6 +52,7 @@ import {
   Search,
   Sparkles,
   Star,
+  UserX,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -216,6 +218,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
 interface CsvLead {
   name: string;
   phone: string;
+  email?: string;
   rating?: number;
   reviews?: number;
   city?: string;
@@ -232,6 +235,8 @@ const HEADER_ALIASES: Record<string, keyof CsvLead> = {
   phone: "phone",
   telephone: "phone",
   tel: "phone",
+  email: "email",
+  emailaddress: "email",
   rating: "rating",
   stars: "rating",
   reviews: "reviews",
@@ -307,6 +312,7 @@ function parseCsv(text: string): { leads: CsvLead[]; skipped: number } {
       } else if (
         field === "name" ||
         field === "phone" ||
+        field === "email" ||
         field === "city" ||
         field === "category" ||
         field === "source" ||
@@ -389,7 +395,7 @@ function ImportCsvDialog() {
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'name,phone,rating,reviews,city,category,source,pitch,status\n"WJ Towell & Co LLC",+96824526001,,,"Ruwi, Oman",Construction Companies,yellowpages.om,,new'}
+          placeholder={'name,phone,email,rating,reviews,city,category,source,pitch,status\n"WJ Towell & Co LLC",+96824526001,info@wjtowell.com,,,"Ruwi, Oman",Construction Companies,yellowpages.om,,new'}
           className="h-44 resize-none font-mono text-xs leading-5"
         />
         <p className="text-xs leading-5 text-muted-foreground">
@@ -431,6 +437,7 @@ export function LeadsWorkspace() {
   const leads = useQuery(api.leads.list);
   const seed = useMutation(api.leads.seed);
   const setStatus = useMutation(api.leads.setStatus);
+  const toggleOptOut = useMutation(api.leads.toggleOptOut);
   const seededRef = useRef(false);
 
   const [query, setQuery] = useState("");
@@ -553,6 +560,9 @@ export function LeadsWorkspace() {
                     <TableHead className="min-w-36">Phone</TableHead>
                     <TableHead className="min-w-28">Pitch</TableHead>
                     <TableHead className="min-w-32">Status</TableHead>
+                    <TableHead className="min-w-24 text-center">
+                      {t("Contact", "التواصل")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -562,11 +572,28 @@ export function LeadsWorkspace() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
-                      className="group border-b transition-colors hover:bg-accent/40"
+                      className={cn(
+                        "group border-b transition-colors hover:bg-accent/40",
+                        lead.optedOut && "opacity-60",
+                      )}
                     >
                       <TableCell>
-                        <p className="font-medium">{lead.name}</p>
-                        <p className="text-xs text-muted-foreground">{lead.source}</p>
+                        <p className="flex items-center gap-1.5 font-medium">
+                          {lead.name}
+                          {lead.optedOut && (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 rounded-full border-destructive/25 bg-destructive/10 text-[10px] text-destructive"
+                            >
+                              <UserX className="size-2.5" />
+                              {t("DNC", "لا اتصال")}
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {lead.source}
+                          {lead.email ? ` · ${lead.email}` : ""}
+                        </p>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {lead.category}
@@ -609,6 +636,24 @@ export function LeadsWorkspace() {
                           </Badge>
                         </button>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={!lead.optedOut}
+                          onCheckedChange={(checked) =>
+                            void toggleOptOut({ id: lead._id, optedOut: !checked })
+                          }
+                          aria-label={
+                            lead.optedOut
+                              ? t("Re-enable contact", "إعادة تفعيل التواصل")
+                              : t("Mark do-not-contact", "وضع علامة عدم التواصل")
+                          }
+                          title={
+                            lead.optedOut
+                              ? t("Opted out — click to re-enable", "تم الإيقاف — انقر لإعادة التفعيل")
+                              : t("Click to mark do-not-contact", "انقر لوضع علامة عدم التواصل")
+                          }
+                        />
+                      </TableCell>
                     </motion.tr>
                   ))}
                 </TableBody>
@@ -620,8 +665,8 @@ export function LeadsWorkspace() {
         <CardFooter className="border-t px-6 py-3">
           <p className="text-xs text-muted-foreground">
             {t(
-              "Click a status badge to move it through the pipeline: new → drafted → sent. The \"Draft with AI\" button uses your free Groq or Gemini key.",
-              "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل. زر \"الصياغة بالذكاء الاصطناعي\" يستخدم مفتاح Groq أو Gemini المجاني.",
+              "Click a status badge to move it through the pipeline: new → drafted → sent. Toggle Contact off to mark a lead do-not-contact — it's then blocked from drafting and sending on every channel.",
+              "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل. أوقف مفتاح التواصل لوضع علامة عدم التواصل — سيُمنع حينها من الصياغة والإرسال في كل القنوات.",
             )}
           </p>
         </CardFooter>

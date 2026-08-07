@@ -1,8 +1,19 @@
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { useRtl } from "@/hooks/use-rtl";
+import { PLANS } from "@/lib/plans";
 import { QUICKSTART_STEPS } from "@/lib/toolkit";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -10,12 +21,18 @@ import {
   CheckCircle2,
   Circle,
   Send,
+  Sparkles,
   Star,
   Users,
 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import type { TabId } from "@/pages/Dashboard";
 
 type Lead = Doc<"leads">;
+
+const PIPELINE_CHART_CONFIG = {
+  count: { label: "Leads", color: "var(--primary)" },
+} satisfies ChartConfig;
 
 export function Overview({
   leads,
@@ -33,6 +50,13 @@ export function Overview({
     : "—";
   const { isRtl } = useRtl();
   const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const usage = useQuery(api.usage.getUsage);
+
+  const pipelineChartData = [
+    { stage: t("New", "جديد"), count: newLeads },
+    { stage: t("Drafted", "مسودة"), count: drafted },
+    { stage: t("Sent", "مرسل"), count: sent },
+  ];
 
   const stats = [
     {
@@ -209,6 +233,92 @@ export function Overview({
                 "في تبويب العملاء — تتم إزالة التكرار حسب الاسم والهاتف.",
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+        {/* Pipeline chart */}
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">{t("Pipeline chart", "مخطط خط الإنتاج")}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {t("Leads by stage, at a glance.", "العملاء حسب المرحلة، بلمحة.")}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={PIPELINE_CHART_CONFIG} className="aspect-auto h-48 w-full">
+              <BarChart data={pipelineChartData}>
+                <CartesianGrid vertical={false} strokeDasharray="4 4" />
+                <XAxis dataKey="stage" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                <Bar dataKey="count" fill="var(--color-count)" radius={6} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* This month's usage / upsell */}
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base">{t("This month's usage", "استخدام هذا الشهر")}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {usage ? PLANS[usage.plan].name : t("Loading…", "جارٍ التحميل…")} {t("plan", "خطة")}
+              </p>
+            </div>
+            {usage && usage.plan === "free" && (
+              <Button size="sm" variant="outline" onClick={() => onNavigate("billing")} className="gap-1.5">
+                <Sparkles className="size-3.5 text-primary" />
+                {t("Upgrade", "ترقية")}
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {!usage ? (
+              <div className="space-y-3">
+                <div className="h-6 animate-pulse rounded-lg bg-muted/70" />
+                <div className="h-6 animate-pulse rounded-lg bg-muted/70" />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 font-medium">
+                      <Sparkles className="size-4 text-primary" />
+                      {t("AI drafts", "مسودات الذكاء الاصطناعي")}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {usage.aiDrafts} / {usage.limits.aiDrafts}
+                    </span>
+                  </div>
+                  <Progress value={Math.min(100, (usage.aiDrafts / usage.limits.aiDrafts) * 100)} />
+                </div>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 font-medium">
+                      <Send className="size-4 text-primary" />
+                      {t("Emails sent", "الرسائل المرسلة")}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {usage.limits.emails === 0
+                        ? t("Pro feature", "ميزة Pro")
+                        : `${usage.emails} / ${usage.limits.emails}`}
+                    </span>
+                  </div>
+                  <Progress
+                    value={usage.limits.emails === 0 ? 0 : Math.min(100, (usage.emails / usage.limits.emails) * 100)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate("billing")}
+                  className="text-start text-xs font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {t("View plans & billing →", "عرض الخطط والفوترة ←")}
+                </button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

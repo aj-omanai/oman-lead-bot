@@ -37,6 +37,7 @@ const schema = defineSchema(
       userId: v.id("users"),
       name: v.string(),
       phone: v.string(),
+      email: v.optional(v.string()), // contact email — powers the Email Outreach service
       rating: v.number(),
       reviews: v.number(),
       city: v.string(),
@@ -44,7 +45,36 @@ const schema = defineSchema(
       source: v.string(),
       pitch: v.optional(v.string()),
       status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
+      optedOut: v.optional(v.boolean()), // do-not-contact — blocks drafting & sending on this lead
+      lastContactedAt: v.optional(v.number()),
+      notes: v.optional(v.string()),
     }).index("by_user", ["userId"]),
+
+    // One row per user, tracking their current plan and Stripe billing state.
+    subscriptions: defineTable({
+      userId: v.id("users"),
+      plan: v.union(v.literal("free"), v.literal("pro"), v.literal("business")),
+      status: v.union(
+        v.literal("active"),
+        v.literal("trialing"),
+        v.literal("past_due"),
+        v.literal("canceled"),
+      ),
+      stripeCustomerId: v.optional(v.string()),
+      stripeSubscriptionId: v.optional(v.string()),
+      currentPeriodEnd: v.optional(v.number()),
+    })
+      .index("by_user", ["userId"])
+      .index("by_stripeCustomer", ["stripeCustomerId"])
+      .index("by_stripeSubscription", ["stripeSubscriptionId"]),
+
+    // Monthly usage counters per user, used to enforce plan limits.
+    usage: defineTable({
+      userId: v.id("users"),
+      period: v.string(), // "YYYY-MM", UTC
+      aiDrafts: v.number(),
+      emails: v.number(),
+    }).index("by_user_period", ["userId", "period"]),
   },
   {
     schemaValidation: false,
