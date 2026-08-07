@@ -2,8 +2,11 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-/** Sample leads so the workspace feels alive before the user runs the Python
- *  pipeline. Real output from `main.py` can be imported through the same shape. */
+/** Real sample leads scraped from yellowpages.om (the live successor of the
+ *  now-defunct yellowpages.com.om) — company names, phones and cities are real
+ *  directory listings, captured August 2026. Ratings/reviews are 0 because the
+ *  directory doesn't expose them. Your own `main.py` output imports through the
+ *  same shape via the CSV dialog (see the downloadable leads-sample.csv). */
 const SAMPLE_LEADS: Array<{
   name: string;
   phone: string;
@@ -15,120 +18,48 @@ const SAMPLE_LEADS: Array<{
   pitch: string;
   status: "new" | "drafted" | "sent";
 }> = [
-  {
-    name: "Al Batinah Marine Services",
-    phone: "+968 2470 1234",
-    rating: 4.4,
-    reviews: 128,
-    city: "Muscat, Oman",
-    category: "Marine equipment",
-    source: "Oman business directory",
-    pitch:
-      "السلام عليكم، شركتنا متخصصة في حلول التسويق الرقمي للشركات الصناعية في عُمان والخليج. حابين نتعاون معكم ونقدم لكم عرض تسويقي مجاني يناسب نشاطكم. هل فيه وقت مناسب نتكلم فيه؟",
-    status: "drafted",
-  },
-  {
-    name: "Dukkan Al Khalij Trading",
-    phone: "+968 2329 0876",
-    rating: 4.1,
-    reviews: 74,
-    city: "Salalah, Oman",
-    category: "FMCG distribution",
-    source: "Oman business directory",
-    pitch:
-      "مرحبا، لاحظنا إن شركتكم من الشركات الرائدة في التوزيع في ظفار. نقدم لكم حملة تسويقية متكاملة بدون أي تكلفة مبدئية. نتمنى نشارككم التفاصيل في مكالمة قصيرة. شكراً لوقتكم!",
-    status: "new",
-  },
-  {
-    name: "Gulf Heights Contracting",
-    phone: "+968 2456 3322",
-    rating: 4.6,
-    reviews: 96,
-    city: "Muscat, Oman",
-    category: "Construction",
-    source: "Oman business directory",
-    pitch:
-      "السلام عليكم، تخصصنا مساعدة شركات المقاولات في الحصول على مشاريع جديدة عبر التسويق الرقمي. عندنا عرض خاص للشركات في مسقط. ممكن نرسل لكم نبذة مختصرة عن خدماتنا؟",
-    status: "new",
-  },
-  {
-    name: "Noor Al Khaleej Logistics",
-    phone: "+971 4 339 8877",
-    rating: 4.3,
-    reviews: 211,
-    city: "Dubai, UAE",
-    category: "Freight & logistics",
-    source: "GCC logistics listings",
-    pitch: "",
-    status: "new",
-  },
-  {
-    name: "Rimal Trading Est.",
-    phone: "+974 4455 6677",
-    rating: 4.0,
-    reviews: 58,
-    city: "Doha, Qatar",
-    category: "Building materials",
-    source: "Qatar business directory",
-    pitch: "",
-    status: "new",
-  },
-  {
-    name: "Al Safwa Auto Spare Parts",
-    phone: "+966 11 240 1122",
-    rating: 4.2,
-    reviews: 142,
-    city: "Riyadh, KSA",
-    category: "Automotive parts",
-    source: "Saudi business directory",
-    pitch: "",
-    status: "new",
-  },
-  {
-    name: "Pearl Island Catering",
-    phone: "+965 2244 5566",
-    rating: 4.5,
-    reviews: 87,
-    city: "Kuwait City, Kuwait",
-    category: "Catering & events",
-    source: "Kuwait business directory",
-    pitch: "",
-    status: "new",
-  },
-  {
-    name: "Ahlan Interiors",
-    phone: "+968 2455 8899",
-    rating: 4.7,
-    reviews: 163,
-    city: "Muscat, Oman",
-    category: "Interior fit-out",
-    source: "Oman business directory",
-    pitch:
-      "السلام عليكم، شفنا أعمالكم في التصميم الداخلي واعجبتنا! نقدر نساعدكم توصلون لشرائح أكبر من العملاء في الخليج عبر حملات مستهدفة. حابين نتكلم عن فرصة تعاون؟",
-    status: "sent",
-  },
-  {
-    name: "Falcon IT Solutions",
-    phone: "+971 4 552 6677",
-    rating: 4.4,
-    reviews: 105,
-    city: "Dubai, UAE",
-    category: "IT services",
-    source: "GCC IT listings",
-    pitch: "",
-    status: "new",
-  },
-  {
-    name: "Zaytoun Food Industries",
-    phone: "+968 2684 1122",
-    rating: 4.3,
-    reviews: 66,
-    city: "Sohar, Oman",
-    category: "Food manufacturing",
-    source: "Oman business directory",
-    pitch: "",
-    status: "drafted",
-  },
+  { name: "WJ Towell & Co LLC", phone: "+96824526001", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "السلام عليكم، مجموعة توول من الشركات العريقة في السوق العُماني منذ 1866. فريقنا متخصص في التسويق الرقمي للشركات التجارية الكبرى في الخليج، وحابين نشارككم عرضاً مخصصاً يناسب حجم أعمالكم. ممكن وقت قصير نتعرف فيه على أولوياتكم؟", status: "drafted" },
+  { name: "Al Naba Infrastructure LLC", phone: "+96898085141", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Hajiry Group Of Companies", phone: "+96824866000", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "مرحبا، لاحظنا حضور مجموعة الحجيري القوي في قطاع الإنشاءات. نقدم لكم حملة تسويقية متكاملة لشركات المقاولات بدون أي تكلفة مبدئية. نتمنى نرسل لكم نبذة مختصرة عن خدماتنا؟", status: "drafted" },
+  { name: "China State Construction Engineering Corp. (Middle East) LLC", phone: "+971554397052", rating: 0, reviews: 0, city: "Dubai, UAE", category: "Construction Companies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Khalili Group", phone: "+96899376481", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Bahwan Engineering Group", phone: "+96824597510", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Naba Holding LLC", phone: "+96892880931", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Construction Companies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Amiantit Oman Co LLC", phone: "+96824445800", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Intisar Corporation LLC (Building Materials)", phone: "+96824831072", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Muna Noor Manufacturing And Trading LLC", phone: "+96899855642", rating: 0, reviews: 0, city: "Rusayl, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Nasr Marbles", phone: "+96896481010", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Kiyumi Electric & Trading Co LLC", phone: "+96824493284", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "The Middle East Traders LLC", phone: "+96824590694", rating: 0, reviews: 0, city: "Muttrah, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Barka Cement Products Factory", phone: "+96899321803", rating: 0, reviews: 0, city: "Barka, Oman", category: "Building Materials", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Genesis International Investment LLC", phone: "+96899450782", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Greenland Equipments & Machinery Est. (Oman)", phone: "+96895916189", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "GeoMatics Middle East", phone: "+96899346640", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Shaksy Engineering Services LLC", phone: "+96893201534", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Yahya Engineering", phone: "+96891799170", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Maxitech International LLC", phone: "+96824696001", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Amanah International Trading & Services LLC", phone: "+96890679556", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Electro Mechanical", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Khalili Logistics LLC", phone: "+96822035000", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Cargoworld Logistics LLC", phone: "+96894213011", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Asyad Shipping Company S.A.O.G", phone: "+96824400900", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Gulf Agency Company (Oman) LLC", phone: "+96824477800", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "City Shipping And Services", phone: "+96824810820", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Duqm United Logistics LLC", phone: "+96871557883", rating: 0, reviews: 0, city: "Duqm, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "WIN Lines", phone: "+96826643915", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Freight Forwarding", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Special Technical Services LLC", phone: "+96824603480", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Kiyumi Oilfield & Gas Equipment & Industrial Appliances LLC", phone: "+96893211909", rating: 0, reviews: 0, city: "Sohar, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Saih Al Nihaidah Trading & Contracting (SANTCO)", phone: "+96824385095", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Gulf Oilfields & Industrial Supplies LLC", phone: "+96824819168", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Business International Group LLC", phone: "+96896012531", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Muscat Overseas Oilfield Supplies Co LLC", phone: "+96822005691", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Rees Oil & Gas Services LLC", phone: "+96824481448", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Oilfield Supplies", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Applus Velosi LLC", phone: "+96899440539", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Addhia Trading & Contracting LLC (Fire, Security And Gas Division)", phone: "+96824491349", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Toolex Industrial Supplies & Solutions (Thanki Enterprises LLC)", phone: "+96899822968", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Dareen Global LLC", phone: "+96892803889", rating: 0, reviews: 0, city: "Qurum, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "G4S Security Solutions LLC", phone: "+96824684900", rating: 0, reviews: 0, city: "Qurum, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Union Technical Trading & Supply Co", phone: "+96896212342", rating: 0, reviews: 0, city: "Seeb, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "FAHUD Safety & Technical Trading SPC", phone: "+96891796734", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
 ];
 
 export const list = query({
@@ -143,6 +74,17 @@ export const list = query({
   },
 });
 
+/** Sources used only by the fictional demo set shipped before the real
+ *  yellowpages.om scrape replaced it. */
+const LEGACY_DEMO_SOURCES = new Set([
+  "Oman business directory",
+  "GCC logistics listings",
+  "Qatar business directory",
+  "Saudi business directory",
+  "Kuwait business directory",
+  "GCC IT listings",
+]);
+
 export const seed = mutation({
   args: {},
   handler: async (ctx) => {
@@ -151,10 +93,31 @@ export const seed = mutation({
     const existing = await ctx.db
       .query("leads")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
-    if (existing) return;
-    for (const lead of SAMPLE_LEADS) {
-      await ctx.db.insert("leads", { ...lead, userId });
+      .collect();
+
+    const insertSample = async () => {
+      for (const lead of SAMPLE_LEADS) {
+        await ctx.db.insert("leads", { ...lead, userId });
+      }
+    };
+
+    // Fresh workspace → seed the real sample.
+    if (existing.length === 0) {
+      await insertSample();
+      return;
+    }
+
+    // One-time migration: swap the legacy fictional demo set for the real
+    // yellowpages.om scrape. Only fires when EVERY existing lead still has a
+    // legacy demo source — anything imported by the user blocks the swap.
+    const isLegacyDemo =
+      existing.length <= 15 &&
+      existing.every((lead) => LEGACY_DEMO_SOURCES.has(lead.source));
+    if (isLegacyDemo) {
+      for (const lead of existing) {
+        await ctx.db.delete(lead._id);
+      }
+      await insertSample();
     }
   },
 });

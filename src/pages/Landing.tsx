@@ -202,14 +202,14 @@ const FAQS = [
 
 const TERMINAL_LINES = [
   { text: "$ python main.py", dim: false },
-  { text: "[scraper] collected 47 unique leads", dim: true },
-  { text: "[storage] saved 47 new leads into leads.db", dim: true },
-  { text: "[personalize] Al Batinah Marine: 142 chars", dim: true },
-  { text: "[personalize] Dukkan Al Khalij: 118 chars", dim: true },
-  { text: "[storage] exported 47 leads to leads.csv", dim: true },
+  { text: "[scraper] collected 42 unique leads", dim: true },
+  { text: "[storage] saved 42 new leads into leads.db", dim: true },
+  { text: "[personalize] WJ Towell & Co LLC: 142 chars", dim: true },
+  { text: "[personalize] Al Hajiry Group: 118 chars", dim: true },
+  { text: "[storage] exported 42 leads to leads.csv", dim: true },
   { text: "", dim: true },
   { text: "$ python main.py --send", dim: false },
-  { text: "[main] 12 drafted leads ready — opening WhatsApp Web…", dim: true },
+  { text: "[main] 2 drafted leads ready — opening WhatsApp Web…", dim: true },
 ];
 
 export default function Landing() {
@@ -298,7 +298,7 @@ export default function Landing() {
             <dl className="mt-10 grid max-w-md grid-cols-3 gap-6 border-t border-border/70 pt-6">
               {[
                 ["$0", t("monthly tooling", "تكلفة الأدوات شهرياً")],
-                ["8", t("runnable files", "ملفات قابلة للتشغيل")],
+                ["9", t("runnable files", "ملفات قابلة للتشغيل")],
                 ["6", t("GCC markets", "أسواق خليجية")],
               ].map(([value, label]) => (
                 <div key={label}>
@@ -346,7 +346,7 @@ export default function Landing() {
                 عُمان. حابين نتعاون معكم ونقدم لكم عرض مناسب لنشاطكم…
               </p>
               <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-                +968 24 70 1234
+                +968 24526001
               </p>
             </motion.div>
 
@@ -358,9 +358,8 @@ export default function Landing() {
               className="absolute -bottom-6 -start-4 z-20 hidden items-center gap-2 rounded-full border border-border/80 bg-card/95 px-4 py-2 shadow-lg shadow-black/5 backdrop-blur sm:flex"
             >
               <Star className="size-4 fill-amber-400 text-amber-400" />
-              <span className="text-sm font-semibold">4.6</span>
-              <span className="text-xs text-muted-foreground">
-                · {t("128 reviews · Muscat", "128 تقييم · مسقط")}
+              <span className="text-xs font-semibold">
+                {t("42 real leads · yellowpages.om", "42 عميلاً حقيقياً · yellowpages.om")}
               </span>
             </motion.div>
           </motion.div>
@@ -501,8 +500,8 @@ export default function Landing() {
               "بايثون قابل للتشغيل، جاهز للتحميل",
             )}
             subtitle={t(
-              "Eight files — scraper, personalizer, storage, messenger, orchestrator, config, requirements and a full README. Sign in to copy or download each one.",
-              "ثمانية ملفات — الكاشط، الخصّص، التخزين، المراسل، المنسق، الإعداد، المتطلبات وREADME كامل. سجّل الدخول لنسخ أو تحميل كل ملف.",
+              "Nine files — scraper, personalizer, storage, messenger, orchestrator, config, requirements, a full README, plus a ready-made leads-sample.csv with 42 real yellowpages.om leads. Sign in to copy or download each one.",
+              "تسعة ملفات — الكاشط، الخصّص، التخزين، المراسل، المنسق، الإعداد، المتطلبات، README كامل، بالإضافة إلى leads-sample.csv جاهز يحتوي 42 عميلاً حقيقياً من yellowpages.om. سجّل الدخول لنسخ أو تحميل كل ملف.",
             )}
           />
           <motion.div
@@ -539,7 +538,7 @@ export default function Landing() {
             <Button size="lg" variant="outline" asChild className="border-teal-300/30 bg-transparent text-white hover:bg-white/5 hover:text-white">
               <Link to={DASHBOARD_URL}>
                 <Terminal className="size-4" />
-                {t("Browse all 8 files", "تصفح الملفات الثمانية")}
+                {t("Browse all 9 files", "تصفح الملفات التسعة")}
               </Link>
             </Button>
           </motion.div>

@@ -389,7 +389,7 @@ function ImportCsvDialog() {
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'name,phone,rating,reviews,city,category,source,pitch,status\n"Al Batinah Marine",+968 2470 1234,4.4,128,"Muscat, Oman",Marine equipment,",Oman directory",,new'}
+          placeholder={'name,phone,rating,reviews,city,category,source,pitch,status\n"WJ Towell & Co LLC",+96824526001,,,"Ruwi, Oman",Construction Companies,yellowpages.om,,new'}
           className="h-44 resize-none font-mono text-xs leading-5"
         />
         <p className="text-xs leading-5 text-muted-foreground">
@@ -436,8 +436,11 @@ export function LeadsWorkspace() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
 
+  // Runs once per session: seed() self-guards — it seeds fresh workspaces,
+  // migrates the legacy fictional demo set to the real yellowpages.om sample,
+  // and is a no-op for workspaces the user has already filled themselves.
   useEffect(() => {
-    if (leads && leads.length === 0 && !seededRef.current) {
+    if (leads && !seededRef.current) {
       seededRef.current = true;
       void seed();
     }
@@ -475,8 +478,8 @@ export function LeadsWorkspace() {
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
             {t(
-              "Demo data from a real-style Oman & GCC scrape. Draft pitches live with your free LLM key, import your own",
-              "بيانات تجريبية بأسلوب كشط حقيقي لسلطنة عُمان والخليج. اصمغ الرسائل مباشرة بمفتاح LLM المجاني، واستورد ملف",
+              "42 real leads scraped from yellowpages.om (Oman's live business directory). Draft pitches live with your free LLM key, import your own",
+              "42 عميلاً حقيقياً تم كشطها من yellowpages.om (دليل الأعمال العُماني المباشر). اصمغ الرسائل مباشرة بمفتاح LLM المجاني، واستورد ملف",
             )}{" "}
             <span className="font-mono">leads.csv</span>
             {t(", and track what you've sent.", "، وتابع ما أرسلته.")}

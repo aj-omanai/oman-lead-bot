@@ -56,7 +56,8 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # ------------------------------------------------------------------- Scraping
 # Example only — replace with real listing URLs for your target directory.
 SCRAPE_URLS = [
-    "https://www.yellowpages.com.om/",   # Omani business directory (example)
+    # Live Oman yellow pages (successor of the now-defunct yellowpages.com.om).
+    "https://www.yellowpages.om/yp/category/construction-companies",
 ]
 SCRAPE_CITY = "Oman"
 SCRAPE_CATEGORY = "general"
@@ -714,6 +715,56 @@ rules, but spam is not. Personalise, keep volumes low, provide opt-out, and
 check local rules (Oman PDPL, UAE data protection, etc.) for your use case.
 `,
   },
+  {
+    id: "leads-sample",
+    name: "leads-sample.csv",
+    language: "text",
+    description: "Real sample output — 42 businesses scraped from yellowpages.om (name, phone, city, category). Import it via Leads → Import CSV, or use it as the shape your main.py output should match.",
+    content: `name,phone,rating,reviews,city,category,source,pitch,status
+WJ Towell & Co LLC,+96824526001,,,"Ruwi, Oman",Construction Companies,yellowpages.om,السلام عليكم، مجموعة توول من الشركات العريقة في السوق العُماني منذ 1866. فريقنا متخصص في التسويق الرقمي للشركات التجارية الكبرى في الخليج، وحابين نشارككم عرضاً مخصصاً يناسب حجم أعمالكم. ممكن وقت قصير نتعرف فيه على أولوياتكم؟,drafted
+Al Naba Infrastructure LLC,+96898085141,,,"Muscat, Oman",Construction Companies,yellowpages.om,,new
+Al Hajiry Group Of Companies,+96824866000,,,"Muscat, Oman",Construction Companies,yellowpages.om,مرحبا، لاحظنا حضور مجموعة الحجيري القوي في قطاع الإنشاءات. نقدم لكم حملة تسويقية متكاملة لشركات المقاولات بدون أي تكلفة مبدئية. نتمنى نرسل لكم نبذة مختصرة عن خدماتنا؟,drafted
+China State Construction Engineering Corp. (Middle East) LLC,+971554397052,,,"Dubai, UAE",Construction Companies,yellowpages.om,,new
+Al Khalili Group,+96899376481,,,"Muscat, Oman",Construction Companies,yellowpages.om,,new
+Bahwan Engineering Group,+96824597510,,,"Muscat, Oman",Construction Companies,yellowpages.om,,new
+Al Naba Holding LLC,+96892880931,,,"Muscat, Oman",Construction Companies,yellowpages.om,,new
+Amiantit Oman Co LLC,+96824445800,,,"Muscat, Oman",Building Materials,yellowpages.om,,new
+Intisar Corporation LLC (Building Materials),+96824831072,,,"Muscat, Oman",Building Materials,yellowpages.om,,new
+Muna Noor Manufacturing And Trading LLC,+96899855642,,,"Rusayl, Oman",Building Materials,yellowpages.om,,new
+Al Nasr Marbles,+96896481010,,,"Muscat, Oman",Building Materials,yellowpages.om,,new
+Al Kiyumi Electric & Trading Co LLC,+96824493284,,,"Muscat, Oman",Building Materials,yellowpages.om,,new
+The Middle East Traders LLC,+96824590694,,,"Muttrah, Oman",Building Materials,yellowpages.om,,new
+Barka Cement Products Factory,+96899321803,,,"Barka, Oman",Building Materials,yellowpages.om,,new
+Genesis International Investment LLC,+96899450782,,,"Muscat, Oman",Electro Mechanical,yellowpages.om,,new
+Greenland Equipments & Machinery Est. (Oman),+96895916189,,,"Ruwi, Oman",Electro Mechanical,yellowpages.om,,new
+GeoMatics Middle East,+96899346640,,,"Muscat, Oman",Electro Mechanical,yellowpages.om,,new
+Shaksy Engineering Services LLC,+96893201534,,,"Ruwi, Oman",Electro Mechanical,yellowpages.om,,new
+Yahya Engineering,+96891799170,,,"Muscat, Oman",Electro Mechanical,yellowpages.om,,new
+Maxitech International LLC,+96824696001,,,"Muscat, Oman",Electro Mechanical,yellowpages.om,,new
+Al Amanah International Trading & Services LLC,+96890679556,,,"Muscat, Oman",Electro Mechanical,yellowpages.om,,new
+Al Khalili Logistics LLC,+96822035000,,,"Muscat, Oman",Freight Forwarding,yellowpages.om,,new
+Cargoworld Logistics LLC,+96894213011,,,"Ruwi, Oman",Freight Forwarding,yellowpages.om,,new
+Asyad Shipping Company S.A.O.G,+96824400900,,,"Muscat, Oman",Freight Forwarding,yellowpages.om,,new
+Gulf Agency Company (Oman) LLC,+96824477800,,,"Muscat, Oman",Freight Forwarding,yellowpages.om,,new
+City Shipping And Services,+96824810820,,,"Ruwi, Oman",Freight Forwarding,yellowpages.om,,new
+Duqm United Logistics LLC,+96871557883,,,"Duqm, Oman",Freight Forwarding,yellowpages.om,,new
+WIN Lines,+96826643915,,,"Muscat, Oman",Freight Forwarding,yellowpages.om,,new
+Special Technical Services LLC,+96824603480,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Al Kiyumi Oilfield & Gas Equipment & Industrial Appliances LLC,+96893211909,,,"Sohar, Oman",Oilfield Supplies,yellowpages.om,,new
+Saih Al Nihaidah Trading & Contracting (SANTCO),+96824385095,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Gulf Oilfields & Industrial Supplies LLC,+96824819168,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Business International Group LLC,+96896012531,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Muscat Overseas Oilfield Supplies Co LLC,+96822005691,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Rees Oil & Gas Services LLC,+96824481448,,,"Muscat, Oman",Oilfield Supplies,yellowpages.om,,new
+Applus Velosi LLC,+96899440539,,,"Muscat, Oman",Safety Equipment,yellowpages.om,,new
+"Addhia Trading & Contracting LLC (Fire, Security And Gas Division)",+96824491349,,,"Muscat, Oman",Safety Equipment,yellowpages.om,,new
+Toolex Industrial Supplies & Solutions (Thanki Enterprises LLC),+96899822968,,,"Muscat, Oman",Safety Equipment,yellowpages.om,,new
+Dareen Global LLC,+96892803889,,,"Qurum, Oman",Safety Equipment,yellowpages.om,,new
+G4S Security Solutions LLC,+96824684900,,,"Qurum, Oman",Safety Equipment,yellowpages.om,,new
+Union Technical Trading & Supply Co,+96896212342,,,"Seeb, Oman",Safety Equipment,yellowpages.om,,new
+FAHUD Safety & Technical Trading SPC,+96891796734,,,"Muscat, Oman",Safety Equipment,yellowpages.om,,new
+`,
+  },
 ];
 
 export interface QuickStartStep {
@@ -725,7 +776,7 @@ export interface QuickStartStep {
 export const QUICKSTART_STEPS: QuickStartStep[] = [
   {
     title: "Get the scripts",
-    detail: "Download the 8 files from the Script Library and put them in one folder.",
+    detail: "Download the 9 files from the Script Library and put them in one folder.",
     code: "mkdir wasl-lead-gen && cd wasl-lead-gen",
   },
   {
@@ -741,7 +792,7 @@ export const QUICKSTART_STEPS: QuickStartStep[] = [
   {
     title: "Point the scraper at a directory",
     detail: "Set SCRAPE_URLS and the CSS selectors to match your target listing site.",
-    code: 'SCRAPE_URLS = ["https://www.yellowpages.com.om/search?..."]',
+    code: 'SCRAPE_URLS = ["https://www.yellowpages.om/yp/category/construction-companies"]',
   },
   {
     title: "Run the pipeline",
