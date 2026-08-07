@@ -174,7 +174,7 @@ export const sendEmail = action({
       };
     }
 
-    await ctx.runMutation(internal.leads.markEmailSent, { id: args.leadId });
+    await ctx.runMutation(internal.leads.markContacted, { id: args.leadId });
     return { ok: true };
   },
 });

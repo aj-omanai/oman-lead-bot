@@ -50,6 +50,7 @@ import {
   Loader2,
   MessageSquare,
   Search,
+  Send,
   Sparkles,
   Star,
   UserX,
@@ -60,7 +61,7 @@ import { toast } from "sonner";
 type Lead = Doc<"leads">;
 type Status = Lead["status"];
 
-const STATUS_ORDER: Status[] = ["new", "drafted", "sent"];
+const STATUS_ORDER: Status[] = ["new", "drafted", "sent", "replied"];
 
 const STATUS_STYLE: Record<
   Status,
@@ -81,6 +82,11 @@ const STATUS_STYLE: Record<
     labelAr: "مرسل",
     className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
   },
+  replied: {
+    label: "Replied",
+    labelAr: "تم الرد",
+    className: "border-violet-500/25 bg-violet-500/10 text-violet-700",
+  },
 };
 
 function PitchDialog({ lead }: { lead: Lead }) {
@@ -89,9 +95,12 @@ function PitchDialog({ lead }: { lead: Lead }) {
   const [copied, setCopied] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const setStatus = useMutation(api.leads.setStatus);
   const setPitch = useMutation(api.leads.setPitch);
   const generatePitch = useAction(api.pitch.generatePitch);
+  const sendWhatsApp = useAction(api.whatsapp.sendWhatsAppMessage);
 
   const copyPitch = async () => {
     await navigator.clipboard.writeText(lead.pitch ?? "");
@@ -113,6 +122,23 @@ function PitchDialog({ lead }: { lead: Lead }) {
       setDraftError(error instanceof Error ? error.message : "Failed to draft the pitch.");
     } finally {
       setDrafting(false);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
+    setSending(true);
+    setSendError(null);
+    try {
+      const result = await sendWhatsApp({ leadId: lead._id });
+      if (result.ok) {
+        toast.success(t("Sent via WhatsApp", "تم الإرسال عبر واتساب"), { description: lead.name });
+      } else {
+        setSendError(result.message);
+      }
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Failed to send the message.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -167,6 +193,12 @@ function PitchDialog({ lead }: { lead: Lead }) {
             <span>{draftError}</span>
           </div>
         )}
+        {sendError && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-800">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <span>{sendError}</span>
+          </div>
+        )}
 
         <DialogFooter className="gap-2 sm:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -200,13 +232,21 @@ function PitchDialog({ lead }: { lead: Lead }) {
               {t("Draft with AI", "صياغة بالذكاء الاصطناعي")}
             </Button>
           ) : (
-            lead.status !== "sent" && (
-              <Button
-                size="sm"
-                onClick={() => void setStatus({ id: lead._id, status: "sent" })}
-              >
-                {t("Mark as sent", "تحديد كمرسلة")}
-              </Button>
+            lead.status !== "sent" &&
+            lead.status !== "replied" && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void setStatus({ id: lead._id, status: "sent" })}
+                >
+                  {t("Mark as sent", "تحديد كمرسلة")}
+                </Button>
+                <Button size="sm" onClick={handleSendWhatsApp} disabled={sending} className="gap-1.5">
+                  {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {t("Send via WhatsApp", "إرسال عبر واتساب")}
+                </Button>
+              </div>
             )
           )}
         </DialogFooter>
@@ -665,8 +705,8 @@ export function LeadsWorkspace() {
         <CardFooter className="border-t px-6 py-3">
           <p className="text-xs text-muted-foreground">
             {t(
-              "Click a status badge to move it through the pipeline: new → drafted → sent. Toggle Contact off to mark a lead do-not-contact — it's then blocked from drafting and sending on every channel.",
-              "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل. أوقف مفتاح التواصل لوضع علامة عدم التواصل — سيُمنع حينها من الصياغة والإرسال في كل القنوات.",
+              "Click a status badge to move it through the pipeline: new → drafted → sent → replied. \"Send via WhatsApp\" needs a connected number in Settings; \"Replied\" is set automatically when a lead answers. Toggle Contact off to mark a lead do-not-contact — it's then blocked from drafting and sending on every channel.",
+              "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل ← تم الرد. زر \"إرسال عبر واتساب\" يحتاج رقماً متصلاً من الإعدادات؛ حالة \"تم الرد\" تُضبط تلقائياً عند رد العميل. أوقف مفتاح التواصل لوضع علامة عدم التواصل — سيُمنع حينها من الصياغة والإرسال في كل القنوات.",
             )}
           </p>
         </CardFooter>

@@ -255,7 +255,11 @@ export function EmailOutreach({ onNavigate }: { onNavigate: (tab: TabId) => void
                       <TableCell className="font-mono text-xs text-muted-foreground">{lead.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="rounded-full">
-                          {lead.status === "sent" ? t("Contacted", "تم التواصل") : t("New", "جديد")}
+                          {lead.status === "replied"
+                            ? t("Replied", "تم الرد")
+                            : lead.status === "sent"
+                              ? t("Contacted", "تم التواصل")
+                              : t("New", "جديد")}
                         </Badge>
                       </TableCell>
                       <TableCell>

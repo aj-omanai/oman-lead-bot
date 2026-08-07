@@ -14,6 +14,7 @@ import { useRtl } from "@/hooks/use-rtl";
 import { useAction, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   Check,
   CheckCircle2,
   Circle,
@@ -22,12 +23,15 @@ import {
   ExternalLink,
   KeyRound,
   Languages,
+  LogOut,
   Loader2,
+  MessageCircle,
+  QrCode,
   RefreshCw,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PROVIDERS = [
   {
@@ -69,6 +73,150 @@ function EnvVarChip({ name }: { name: string }) {
       {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
       {name}
     </button>
+  );
+}
+
+type WhatsAppStatus =
+  | { ok: true; connected: boolean; qr: string | null; phoneNumber: string | null }
+  | { ok: false; reason: "no-auth" | "not-configured" | "error"; message: string };
+
+function WhatsAppConnectionCard() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const getStatus = useAction(api.whatsapp.getConnectionStatus);
+  const disconnect = useAction(api.whatsapp.disconnectWhatsApp);
+  const [status, setStatus] = useState<WhatsAppStatus | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const refresh = async () => {
+    try {
+      setStatus(await getStatus());
+    } catch (error) {
+      setStatus({
+        ok: false,
+        reason: "error",
+        message: error instanceof Error ? error.message : "Status check failed.",
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Poll while pairing so a scanned QR flips to "Connected" without a
+    // manual refresh. Cheap enough to just always run at this interval —
+    // setTimeout(…, 0) for the first check so it's a deferred callback like
+    // the interval ticks, not a synchronous call during the effect itself.
+    const initial = setTimeout(() => void refresh(), 0);
+    pollRef.current = setInterval(() => void refresh(), 4000);
+    return () => {
+      clearTimeout(initial);
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await disconnect();
+      await refresh();
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const connected = status?.ok && status.connected;
+
+  return (
+    <Card className="border-border/80 shadow-sm">
+      <CardContent className="flex flex-col gap-5 p-6 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-4">
+          <div
+            className={
+              connected
+                ? "flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600"
+                : "flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"
+            }
+          >
+            <MessageCircle className="size-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-base font-semibold">{t("WhatsApp sending", "إرسال واتساب")}</h2>
+              {status === null ? (
+                <Badge variant="outline" className="rounded-full text-muted-foreground">
+                  {t("Checking…", "جارٍ الفحص…")}
+                </Badge>
+              ) : connected ? (
+                <Badge variant="outline" className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700">
+                  {t("Connected", "متصل")}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700">
+                  {t("Not connected", "غير متصل")}
+                </Badge>
+              )}
+            </div>
+            <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
+              {status?.ok && connected
+                ? `${t("Sending as", "يتم الإرسال باسم")} ${status.phoneNumber ?? "—"}. ${t(
+                    "The \"Send via WhatsApp\" button in Leads is live.",
+                    "زر \"إرسال عبر واتساب\" في تبويب العملاء مفعّل الآن.",
+                  )}`
+                : t(
+                    "A standalone service (Baileys) sends WhatsApp messages without a browser to babysit — see whatsapp-service/README.md to deploy it.",
+                    "خدمة مستقلة (Baileys) ترسل رسائل واتساب دون الحاجة لمتصفح مفتوح — راجع whatsapp-service/README.md للنشر.",
+                  )}
+            </p>
+            {status?.ok === false && status.reason === "not-configured" && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-800">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                <span>{status.message}</span>
+              </div>
+            )}
+            {status?.ok === false && status.reason === "error" && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-800">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                <span>{status.message}</span>
+              </div>
+            )}
+            {status?.ok && !connected && (
+              <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                {status.qr ? (
+                  <img
+                    src={status.qr}
+                    alt="WhatsApp pairing QR code"
+                    className="size-40 rounded-lg border border-border/80 bg-white p-2"
+                  />
+                ) : (
+                  <div className="flex size-40 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+                    <QrCode className="size-6 animate-pulse" />
+                  </div>
+                )}
+                <p className="max-w-56 text-xs leading-5 text-muted-foreground">
+                  {t(
+                    "Open WhatsApp → Linked Devices → Link a Device, and scan this code. It refreshes automatically.",
+                    "افتح واتساب ← الأجهزة المرتبطة ← ربط جهاز، وامسح هذا الرمز. يتم تحديثه تلقائياً.",
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" onClick={() => void refresh()} className="gap-2">
+            <RefreshCw className="size-4" />
+            {t("Refresh", "تحديث")}
+          </Button>
+          {connected && (
+            <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={disconnecting} className="gap-2">
+              {disconnecting ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
+              {t("Disconnect", "قطع الاتصال")}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -223,6 +371,11 @@ export function Settings() {
             </div>
           )}
         </Card>
+      </motion.div>
+
+      {/* ===================== WhatsApp connection ===================== */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.04 }}>
+        <WhatsAppConnectionCard />
       </motion.div>
 
       {/* ===================== Interface direction ===================== */}

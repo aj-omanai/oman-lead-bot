@@ -1,0 +1,30 @@
+# Example Fly.io config — rename app, run `fly volumes create wasl_wa_auth --size 1`
+# in the same region first, then `fly deploy` from this directory.
+app = "wasl-whatsapp-service"
+primary_region = "fra"
+
+[build]
+
+[env]
+  PORT = "8787"
+  WHATSAPP_AUTH_DIR = "/app/auth_state"
+
+[mounts]
+  source = "wasl_wa_auth"
+  destination = "/app/auth_state"
+
+[[services]]
+  internal_port = 8787
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+# Set secrets separately, they don't belong in this file:
+#   fly secrets set WHATSAPP_SERVICE_SECRET=... CONVEX_SITE_URL=... CONVEX_WEBHOOK_SECRET=...

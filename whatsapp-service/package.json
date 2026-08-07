@@ -1,0 +1,26 @@
+{
+  "name": "wasl-whatsapp-service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Standalone always-on WhatsApp sender for oman-lead-bot, using Baileys instead of Selenium/PyWhatKit browser automation.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^6.7.24",
+    "express": "^5.2.1",
+    "pino": "^10.3.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "@types/qrcode": "^1.5.6",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3"
+  }
+}

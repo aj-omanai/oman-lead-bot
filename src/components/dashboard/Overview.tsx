@@ -20,6 +20,7 @@ import {
   Bot,
   CheckCircle2,
   Circle,
+  MessageCircle,
   Send,
   Sparkles,
   Star,
@@ -44,7 +45,8 @@ export function Overview({
   const total = leads?.length ?? 0;
   const drafted = leads?.filter((l) => l.status === "drafted").length ?? 0;
   const sent = leads?.filter((l) => l.status === "sent").length ?? 0;
-  const newLeads = total - drafted - sent;
+  const replied = leads?.filter((l) => l.status === "replied").length ?? 0;
+  const newLeads = total - drafted - sent - replied;
   const avgRating = leads?.length
     ? (leads.reduce((sum, l) => sum + l.rating, 0) / leads.length).toFixed(1)
     : "—";
@@ -56,6 +58,7 @@ export function Overview({
     { stage: t("New", "جديد"), count: newLeads },
     { stage: t("Drafted", "مسودة"), count: drafted },
     { stage: t("Sent", "مرسل"), count: sent },
+    { stage: t("Replied", "تم الرد"), count: replied },
   ];
 
   const stats = [
@@ -180,6 +183,7 @@ export function Overview({
               { label: t("New", "جديد"), value: newLeads, icon: Circle },
               { label: t("Drafted", "مسودة"), value: drafted, icon: CheckCircle2 },
               { label: t("Sent", "مرسل"), value: sent, icon: Send },
+              { label: t("Replied", "تم الرد"), value: replied, icon: MessageCircle },
             ].map((stage) => (
               <div key={stage.label}>
                 <div className="mb-1.5 flex items-center justify-between text-sm">
@@ -190,6 +194,7 @@ export function Overview({
                         stage.label === t("New", "جديد") && "text-muted-foreground",
                         stage.label === t("Drafted", "مسودة") && "text-primary",
                         stage.label === t("Sent", "مرسل") && "text-emerald-600",
+                        stage.label === t("Replied", "تم الرد") && "text-violet-600",
                       )}
                     />
                     {stage.label}
@@ -208,6 +213,7 @@ export function Overview({
                       stage.label === t("New", "جديد") && "bg-muted-foreground/50",
                       stage.label === t("Drafted", "مسودة") && "bg-primary",
                       stage.label === t("Sent", "مرسل") && "bg-emerald-500",
+                      stage.label === t("Replied", "تم الرد") && "bg-violet-500",
                     )}
                   />
                 </div>

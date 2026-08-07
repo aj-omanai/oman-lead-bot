@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { leadStatusValidator } from "./schema";
 
 /** Real sample leads scraped from yellowpages.om (the live successor of the
  *  now-defunct yellowpages.com.om) — company names, phones and cities are real
@@ -123,7 +124,7 @@ export const seed = mutation({
 });
 
 export const setStatus = mutation({
-  args: { id: v.id("leads"), status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")) },
+  args: { id: v.id("leads"), status: leadStatusValidator },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return;
@@ -190,9 +191,7 @@ export const importLeads = mutation({
         category: v.optional(v.string()),
         source: v.optional(v.string()),
         pitch: v.optional(v.string()),
-        status: v.optional(
-          v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
-        ),
+        status: v.optional(leadStatusValidator),
       }),
     ),
   },
@@ -232,12 +231,48 @@ export const importLeads = mutation({
   },
 });
 
-/** Internal-only: called by emailOutreach.sendEmail after a successful send.
- *  Status is channel-agnostic — it reflects "contacted," not "contacted on
- *  WhatsApp specifically." */
-export const markEmailSent = internalMutation({
+/** Internal-only: called after a successful send on any channel (email,
+ *  WhatsApp). Status is channel-agnostic — it reflects "contacted," not
+ *  "contacted on this specific channel." */
+export const markContacted = internalMutation({
   args: { id: v.id("leads") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { status: "sent", lastContactedAt: Date.now() });
+  },
+});
+
+function phoneDigits(phone: string): string {
+  return phone.replace(/[^\d]/g, "");
+}
+
+/** Internal-only: find a lead by phone number within one user's workspace.
+ *  Used by the WhatsApp webhook, which only knows the sender's raw MSISDN
+ *  (no "+", no formatting) — compares digits only so "+968..." and
+ *  "968..." match the same lead. */
+export const findByPhone = internalQuery({
+  args: { userId: v.id("users"), phone: v.string() },
+  handler: async (ctx, args) => {
+    const target = phoneDigits(args.phone);
+    if (!target) return null;
+    const leads = await ctx.db
+      .query("leads")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    return leads.find((lead) => phoneDigits(lead.phone).endsWith(target) || target.endsWith(phoneDigits(lead.phone))) ?? null;
+  },
+});
+
+/** Internal-only: called by the WhatsApp webhook when a lead replies.
+ *  Appends the reply to notes rather than replacing them, so a rep's own
+ *  notes on the lead survive. */
+export const markReplied = internalMutation({
+  args: { id: v.id("leads"), replyText: v.string() },
+  handler: async (ctx, args) => {
+    const lead = await ctx.db.get(args.id);
+    if (!lead) return;
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const logLine = `[WhatsApp reply, ${stamp}] ${args.replyText}`.slice(0, 500);
+    const notes = lead.notes ? `${lead.notes}\n${logLine}` : logLine;
+    await ctx.db.patch(args.id, { status: "replied", notes });
   },
 });

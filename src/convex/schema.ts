@@ -16,6 +16,16 @@ export const roleValidator = v.union(
 );
 export type Role = Infer<typeof roleValidator>;
 
+// "replied" is set automatically by the WhatsApp webhook when a lead
+// answers — it isn't only a manual pipeline stage like the other three.
+export const leadStatusValidator = v.union(
+  v.literal("new"),
+  v.literal("drafted"),
+  v.literal("sent"),
+  v.literal("replied"),
+);
+export type LeadStatus = Infer<typeof leadStatusValidator>;
+
 const schema = defineSchema(
   {
     // default auth tables using convex auth.
@@ -44,7 +54,7 @@ const schema = defineSchema(
       category: v.string(),
       source: v.string(),
       pitch: v.optional(v.string()),
-      status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
+      status: leadStatusValidator,
       optedOut: v.optional(v.boolean()), // do-not-contact — blocks drafting & sending on this lead
       lastContactedAt: v.optional(v.number()),
       notes: v.optional(v.string()),
