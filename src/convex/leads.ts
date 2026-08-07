@@ -4,9 +4,10 @@ import { v } from "convex/values";
 
 /** Real sample leads scraped from yellowpages.om (the live successor of the
  *  now-defunct yellowpages.com.om) — company names, phones and cities are real
- *  directory listings, captured August 2026. Ratings/reviews are 0 because the
- *  directory doesn't expose them. Your own `main.py` output imports through the
- *  same shape via the CSV dialog (see the downloadable leads-sample.csv). */
+ *  directory listings, captured August 2026 across 12 categories. Ratings and
+ *  reviews are 0 because the directory doesn't expose them. Your own main.py
+ *  output imports through the same shape via the CSV dialog (see the
+ *  downloadable leads-sample.csv in the Script Library). */
 const SAMPLE_LEADS: Array<{
   name: string;
   phone: string;
@@ -60,6 +61,53 @@ const SAMPLE_LEADS: Array<{
   { name: "G4S Security Solutions LLC", phone: "+96824684900", rating: 0, reviews: 0, city: "Qurum, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
   { name: "Union Technical Trading & Supply Co", phone: "+96896212342", rating: 0, reviews: 0, city: "Seeb, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
   { name: "FAHUD Safety & Technical Trading SPC", phone: "+96891796734", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Safety Equipment", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Shangri La Barr Al Jissah", phone: "+96824776666", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Alila Jabal Akhdar", phone: "+96825344200", rating: 0, reviews: 0, city: "Al Jabal Al Akhdar, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Sohar Beach Hotel", phone: "+96826841111", rating: 0, reviews: 0, city: "Sohar, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Desert Nights Camp", phone: "+96892818388", rating: 0, reviews: 0, city: "Al Wasil, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Wadi Hotel - Sohar", phone: "+96826840058", rating: 0, reviews: 0, city: "Sohar, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "City Seasons Muscat", phone: "+96824394800", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Hotels & Travel", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "RazmAzaan Restaurant", phone: "+96891944999", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Kamat Restaurant", phone: "+96824793355", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "#968 The Food Studio", phone: "+96890968968", rating: 0, reviews: 0, city: "Al Khuwair, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Aangan By Rohit Ghai", phone: "+96879269247", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "AL Andalus Restaurant", phone: "+96822550000", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Aqr Traditional Restaurant", phone: "+96872237373", rating: 0, reviews: 0, city: "Nizwa, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Baha Restaurant", phone: "+96825218000", rating: 0, reviews: 0, city: "Nizwa, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Falaj The Restaurant", phone: "+96894303207", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Khana Khazana Restaurant", phone: "+96899107745", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Bombay Chaat Corner & Restaurant", phone: "+96899368514", rating: 0, reviews: 0, city: "Wadi Kabir, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Golden Moon Restaurant Ghala", phone: "+96893514008", rating: 0, reviews: 0, city: "Ghala, Oman", category: "Restaurants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Global Car Rental & Leasing (Al Hashar Group)", phone: "+96895032958", rating: 0, reviews: 0, city: "Qurum, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Budget Rent A Car (Travel & Allied Services LLC)", phone: "+96822351860", rating: 0, reviews: 0, city: "Al Khuwair, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Autorent Oman", phone: "+96879999466", rating: 0, reviews: 0, city: "Azaiba, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Orbit Car Rental & Leasing", phone: "+96872727696", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "MHD - ACERE - MHD Leasing LLC", phone: "+96871557334", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Dollar Car Rental", phone: "+96824590824", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Sixt Rent A Car", phone: "+96822080940", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Europcar Oman", phone: "+96897867424", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "International Rent A Car", phone: "+96897090063", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "ABC Rent A Car", phone: "+96892804099", rating: 0, reviews: 0, city: "Ghala, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Sayarti Car Rentals", phone: "+96899684331", rating: 0, reviews: 0, city: "Azaiba, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Avis Oman", phone: "+96824607235", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Al Moosa Rent A Car", phone: "+96893266064", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Car Hire & Leasing", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "TMTEC Trading & Technical Services LLC", phone: "+96824595838", rating: 0, reviews: 0, city: "Muttrah, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Techno Gears Industries LLC", phone: "+96824446782", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Gulf Services & Industrial Supplies Co LLC", phone: "+96893214159", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Precision Tune Auto Care", phone: "+96824479986", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Oman Mechanical Services Co Ltd LLC (Lubricant Division)", phone: "+96824502820", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Oman Mechanical Services Co Ltd LLC(Material Handling Division)", phone: "+96824592235", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "MHD - ACERE - Automotive Division", phone: "+96824496560", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "MHD - ACERE - Tyres & Batteries Division", phone: "+96871557334", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Automotive", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "AL Ariq Equipment LLC", phone: "+96824502925", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Pest Control", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Peace Of Mind LLC", phone: "+96892487777", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Pest Control", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Luster Overall Excellence Foundation", phone: "+96893572480", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Pest Control", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "National Pest Control Services LLC", phone: "+96890116213", rating: 0, reviews: 0, city: "Al Amerat, Oman", category: "Pest Control", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "ART Group Of Companies", phone: "+96898702485", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Pest Control", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Towell Engineering Group", phone: "+96824526084", rating: 0, reviews: 0, city: "Ruwi, Oman", category: "Engineering Consultants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Miles Engineering Consultancy", phone: "+96897221599", rating: 0, reviews: 0, city: "Seeb, Oman", category: "Engineering Consultants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "National Engineering Office", phone: "+96822507668", rating: 0, reviews: 0, city: "Muscat, Oman", category: "Engineering Consultants", source: "yellowpages.om", pitch: "", status: "new" },
+  { name: "Dawood Engineering Consultancy", phone: "+96824499466", rating: 0, reviews: 0, city: "Azaiba, Oman", category: "Engineering Consultants", source: "yellowpages.om", pitch: "", status: "new" },
 ];
 
 export const list = query({
@@ -85,6 +133,16 @@ const LEGACY_DEMO_SOURCES = new Set([
   "GCC IT listings",
 ]);
 
+/** Categories that exist only in the expanded 89-lead sample — their absence
+ *  is how seed() recognises a workspace still on the previous 42-lead sample. */
+const EXPANDED_SAMPLE_CATEGORIES = [
+  "Restaurants",
+  "Hotels & Travel",
+  "Automotive",
+  "Pest Control",
+  "Engineering Consultants",
+];
+
 export const seed = mutation({
   args: {},
   handler: async (ctx) => {
@@ -107,13 +165,31 @@ export const seed = mutation({
       return;
     }
 
-    // One-time migration: swap the legacy fictional demo set for the real
+    // One-time migration #1: swap the legacy fictional demo set for the real
     // yellowpages.om scrape. Only fires when EVERY existing lead still has a
     // legacy demo source — anything imported by the user blocks the swap.
     const isLegacyDemo =
       existing.length <= 15 &&
       existing.every((lead) => LEGACY_DEMO_SOURCES.has(lead.source));
     if (isLegacyDemo) {
+      for (const lead of existing) {
+        await ctx.db.delete(lead._id);
+      }
+      await insertSample();
+      return;
+    }
+
+    // One-time migration #2: swap the previous 42-lead sample for the expanded
+    // 89-lead sample. Only fires when the workspace looks exactly like the old
+    // sample — all yellowpages.om-sourced, ≤45 leads, and no lead in a category
+    // that only the expanded sample covers.
+    const isPrevSample =
+      existing.length <= 45 &&
+      existing.every((lead) => lead.source === "yellowpages.om") &&
+      !existing.some((lead) =>
+        EXPANDED_SAMPLE_CATEGORIES.includes(lead.category),
+      );
+    if (isPrevSample) {
       for (const lead of existing) {
         await ctx.db.delete(lead._id);
       }

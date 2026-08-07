@@ -202,11 +202,11 @@ const FAQS = [
 
 const TERMINAL_LINES = [
   { text: "$ python main.py", dim: false },
-  { text: "[scraper] collected 42 unique leads", dim: true },
-  { text: "[storage] saved 42 new leads into leads.db", dim: true },
+  { text: "[scraper] collected 89 unique leads", dim: true },
+  { text: "[storage] saved 89 new leads into leads.db", dim: true },
   { text: "[personalize] WJ Towell & Co LLC: 142 chars", dim: true },
   { text: "[personalize] Al Hajiry Group: 118 chars", dim: true },
-  { text: "[storage] exported 42 leads to leads.csv", dim: true },
+  { text: "[storage] exported 89 leads to leads.csv", dim: true },
   { text: "", dim: true },
   { text: "$ python main.py --send", dim: false },
   { text: "[main] 2 drafted leads ready — opening WhatsApp Web…", dim: true },
@@ -359,7 +359,7 @@ export default function Landing() {
             >
               <Star className="size-4 fill-amber-400 text-amber-400" />
               <span className="text-xs font-semibold">
-                {t("42 real leads · yellowpages.om", "42 عميلاً حقيقياً · yellowpages.om")}
+                {t("89 real leads · yellowpages.om", "89 عميلاً حقيقياً · yellowpages.om")}
               </span>
             </motion.div>
           </motion.div>
@@ -500,8 +500,8 @@ export default function Landing() {
               "بايثون قابل للتشغيل، جاهز للتحميل",
             )}
             subtitle={t(
-              "Nine files — scraper, personalizer, storage, messenger, orchestrator, config, requirements, a full README, plus a ready-made leads-sample.csv with 42 real yellowpages.om leads. Sign in to copy or download each one.",
-              "تسعة ملفات — الكاشط، الخصّص، التخزين، المراسل، المنسق، الإعداد، المتطلبات، README كامل، بالإضافة إلى leads-sample.csv جاهز يحتوي 42 عميلاً حقيقياً من yellowpages.om. سجّل الدخول لنسخ أو تحميل كل ملف.",
+              "Nine files — scraper, personalizer, storage, messenger, orchestrator, config, requirements, a full README, plus a ready-made leads-sample.csv with 89 real yellowpages.om leads across 12 categories. Sign in to copy or download each one.",
+              "تسعة ملفات — الكاشط، الخصّص، التخزين، المراسل، المنسق، الإعداد، المتطلبات، README كامل، بالإضافة إلى leads-sample.csv جاهز يحتوي 89 عميلاً حقيقياً من yellowpages.om عبر 12 قطاعاً. سجّل الدخول لنسخ أو تحميل كل ملف.",
             )}
           />
           <motion.div

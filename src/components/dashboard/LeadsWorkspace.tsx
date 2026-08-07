@@ -478,8 +478,8 @@ export function LeadsWorkspace() {
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
             {t(
-              "42 real leads scraped from yellowpages.om (Oman's live business directory). Draft pitches live with your free LLM key, import your own",
-              "42 عميلاً حقيقياً تم كشطها من yellowpages.om (دليل الأعمال العُماني المباشر). اصمغ الرسائل مباشرة بمفتاح LLM المجاني، واستورد ملف",
+              "89 real leads scraped from yellowpages.om (Oman's live business directory) across 12 categories. Draft pitches live with your free LLM key, import your own",
+              "89 عميلاً حقيقياً تم كشطها من yellowpages.om (دليل الأعمال العُماني المباشر) عبر 12 قطاعاً. اصمغ الرسائل مباشرة بمفتاح LLM المجاني، واستورد ملف",
             )}{" "}
             <span className="font-mono">leads.csv</span>
             {t(", and track what you've sent.", "، وتابع ما أرسلته.")}

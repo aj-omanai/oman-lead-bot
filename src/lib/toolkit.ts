@@ -719,7 +719,7 @@ check local rules (Oman PDPL, UAE data protection, etc.) for your use case.
     id: "leads-sample",
     name: "leads-sample.csv",
     language: "text",
-    description: "Real sample output — 42 businesses scraped from yellowpages.om (name, phone, city, category). Import it via Leads → Import CSV, or use it as the shape your main.py output should match.",
+    description: "Real sample output — 89 businesses scraped from yellowpages.om across 12 categories (construction, hotels, restaurants, car hire, oilfield, …). Import it via Leads → Import CSV, or use it as the shape your main.py output should match.",
     content: `name,phone,rating,reviews,city,category,source,pitch,status
 WJ Towell & Co LLC,+96824526001,,,"Ruwi, Oman",Construction Companies,yellowpages.om,السلام عليكم، مجموعة توول من الشركات العريقة في السوق العُماني منذ 1866. فريقنا متخصص في التسويق الرقمي للشركات التجارية الكبرى في الخليج، وحابين نشارككم عرضاً مخصصاً يناسب حجم أعمالكم. ممكن وقت قصير نتعرف فيه على أولوياتكم؟,drafted
 Al Naba Infrastructure LLC,+96898085141,,,"Muscat, Oman",Construction Companies,yellowpages.om,,new
@@ -763,6 +763,53 @@ Dareen Global LLC,+96892803889,,,"Qurum, Oman",Safety Equipment,yellowpages.om,,
 G4S Security Solutions LLC,+96824684900,,,"Qurum, Oman",Safety Equipment,yellowpages.om,,new
 Union Technical Trading & Supply Co,+96896212342,,,"Seeb, Oman",Safety Equipment,yellowpages.om,,new
 FAHUD Safety & Technical Trading SPC,+96891796734,,,"Muscat, Oman",Safety Equipment,yellowpages.om,,new
+Shangri La Barr Al Jissah,+96824776666,,,"Muscat, Oman",Hotels & Travel,yellowpages.om,,new
+Alila Jabal Akhdar,+96825344200,,,"Al Jabal Al Akhdar, Oman",Hotels & Travel,yellowpages.om,,new
+Sohar Beach Hotel,+96826841111,,,"Sohar, Oman",Hotels & Travel,yellowpages.om,,new
+Desert Nights Camp,+96892818388,,,"Al Wasil, Oman",Hotels & Travel,yellowpages.om,,new
+Al Wadi Hotel - Sohar,+96826840058,,,"Sohar, Oman",Hotels & Travel,yellowpages.om,,new
+City Seasons Muscat,+96824394800,,,"Muscat, Oman",Hotels & Travel,yellowpages.om,,new
+RazmAzaan Restaurant,+96891944999,,,"Muscat, Oman",Restaurants,yellowpages.om,,new
+Kamat Restaurant,+96824793355,,,"Ruwi, Oman",Restaurants,yellowpages.om,,new
+#968 The Food Studio,+96890968968,,,"Al Khuwair, Oman",Restaurants,yellowpages.om,,new
+Aangan By Rohit Ghai,+96879269247,,,"Muscat, Oman",Restaurants,yellowpages.om,,new
+AL Andalus Restaurant,+96822550000,,,"Muscat, Oman",Restaurants,yellowpages.om,,new
+Al Aqr Traditional Restaurant,+96872237373,,,"Nizwa, Oman",Restaurants,yellowpages.om,,new
+Al Baha Restaurant,+96825218000,,,"Nizwa, Oman",Restaurants,yellowpages.om,,new
+Al Falaj The Restaurant,+96894303207,,,"Ruwi, Oman",Restaurants,yellowpages.om,,new
+Khana Khazana Restaurant,+96899107745,,,"Ruwi, Oman",Restaurants,yellowpages.om,,new
+Bombay Chaat Corner & Restaurant,+96899368514,,,"Wadi Kabir, Oman",Restaurants,yellowpages.om,,new
+Golden Moon Restaurant Ghala,+96893514008,,,"Ghala, Oman",Restaurants,yellowpages.om,,new
+Global Car Rental & Leasing (Al Hashar Group),+96895032958,,,"Qurum, Oman",Car Hire & Leasing,yellowpages.om,,new
+Budget Rent A Car (Travel & Allied Services LLC),+96822351860,,,"Al Khuwair, Oman",Car Hire & Leasing,yellowpages.om,,new
+Autorent Oman,+96879999466,,,"Azaiba, Oman",Car Hire & Leasing,yellowpages.om,,new
+Orbit Car Rental & Leasing,+96872727696,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+MHD - ACERE - MHD Leasing LLC,+96871557334,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+Dollar Car Rental,+96824590824,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+Sixt Rent A Car,+96822080940,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+Europcar Oman,+96897867424,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+International Rent A Car,+96897090063,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+ABC Rent A Car,+96892804099,,,"Ghala, Oman",Car Hire & Leasing,yellowpages.om,,new
+Sayarti Car Rentals,+96899684331,,,"Azaiba, Oman",Car Hire & Leasing,yellowpages.om,,new
+Avis Oman,+96824607235,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+Al Moosa Rent A Car,+96893266064,,,"Muscat, Oman",Car Hire & Leasing,yellowpages.om,,new
+TMTEC Trading & Technical Services LLC,+96824595838,,,"Muttrah, Oman",Automotive,yellowpages.om,,new
+Techno Gears Industries LLC,+96824446782,,,"Muscat, Oman",Automotive,yellowpages.om,,new
+Gulf Services & Industrial Supplies Co LLC,+96893214159,,,"Ruwi, Oman",Automotive,yellowpages.om,,new
+Precision Tune Auto Care,+96824479986,,,"Ruwi, Oman",Automotive,yellowpages.om,,new
+Oman Mechanical Services Co Ltd LLC (Lubricant Division),+96824502820,,,"Muscat, Oman",Automotive,yellowpages.om,,new
+Oman Mechanical Services Co Ltd LLC(Material Handling Division),+96824592235,,,"Muscat, Oman",Automotive,yellowpages.om,,new
+MHD - ACERE - Automotive Division,+96824496560,,,"Muscat, Oman",Automotive,yellowpages.om,,new
+MHD - ACERE - Tyres & Batteries Division,+96871557334,,,"Muscat, Oman",Automotive,yellowpages.om,,new
+AL Ariq Equipment LLC,+96824502925,,,"Ruwi, Oman",Pest Control,yellowpages.om,,new
+Peace Of Mind LLC,+96892487777,,,"Muscat, Oman",Pest Control,yellowpages.om,,new
+Luster Overall Excellence Foundation,+96893572480,,,"Muscat, Oman",Pest Control,yellowpages.om,,new
+National Pest Control Services LLC,+96890116213,,,"Al Amerat, Oman",Pest Control,yellowpages.om,,new
+ART Group Of Companies,+96898702485,,,"Muscat, Oman",Pest Control,yellowpages.om,,new
+Towell Engineering Group,+96824526084,,,"Ruwi, Oman",Engineering Consultants,yellowpages.om,,new
+Miles Engineering Consultancy,+96897221599,,,"Seeb, Oman",Engineering Consultants,yellowpages.om,,new
+National Engineering Office,+96822507668,,,"Muscat, Oman",Engineering Consultants,yellowpages.om,,new
+Dawood Engineering Consultancy,+96824499466,,,"Azaiba, Oman",Engineering Consultants,yellowpages.om,,new
 `,
   },
 ];
