@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 /** Real sample leads scraped from yellowpages.om (the live successor of the
@@ -127,7 +127,25 @@ export const setStatus = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return;
-    await ctx.db.patch(args.id, { status: args.status });
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    if (lead.optedOut && args.status === "sent") return; // do-not-contact leads can't be marked sent
+    const patch: { status: typeof args.status; lastContactedAt?: number } = { status: args.status };
+    if (args.status === "sent") patch.lastContactedAt = Date.now();
+    await ctx.db.patch(args.id, patch);
+  },
+});
+
+/** Toggle a lead's do-not-contact flag. Opted-out leads can't be drafted for
+ *  or marked sent, on either the WhatsApp or email channel. */
+export const toggleOptOut = mutation({
+  args: { id: v.id("leads"), optedOut: v.boolean() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, { optedOut: args.optedOut });
   },
 });
 
@@ -150,7 +168,7 @@ export const setPitch = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) return;
     const lead = await ctx.db.get(args.id);
-    if (!lead || lead.userId !== userId) return;
+    if (!lead || lead.userId !== userId || lead.optedOut) return;
     await ctx.db.patch(args.id, { pitch: args.pitch, status: "drafted" });
   },
 });
@@ -165,6 +183,7 @@ export const importLeads = mutation({
       v.object({
         name: v.string(),
         phone: v.string(),
+        email: v.optional(v.string()),
         rating: v.optional(v.number()),
         reviews: v.optional(v.number()),
         city: v.optional(v.string()),
@@ -198,6 +217,7 @@ export const importLeads = mutation({
         userId,
         name,
         phone: row.phone,
+        email: row.email,
         rating: row.rating ?? 0,
         reviews: row.reviews ?? 0,
         city: row.city ?? "",
@@ -209,5 +229,15 @@ export const importLeads = mutation({
       inserted += 1;
     }
     return { inserted };
+  },
+});
+
+/** Internal-only: called by emailOutreach.sendEmail after a successful send.
+ *  Status is channel-agnostic — it reflects "contacted," not "contacted on
+ *  WhatsApp specifically." */
+export const markEmailSent = internalMutation({
+  args: { id: v.id("leads") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { status: "sent", lastContactedAt: Date.now() });
   },
 });

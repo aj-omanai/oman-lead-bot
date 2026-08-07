@@ -2,9 +2,13 @@
 
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { action } from "./_generated/server";
 import { GEMINI_MODEL, GROQ_MODEL } from "./integrations";
+import { callGemini, callGroq } from "./llm";
+
+const WHATSAPP_SYSTEM_PROMPT =
+  "You write short, warm, professional Gulf Arabic WhatsApp pitches for B2B outreach.";
 
 /**
  * Live "Draft with AI" — the same personalization step the local Python
@@ -43,51 +47,6 @@ function buildPrompt(lead: LeadInfo): string {
   );
 }
 
-async function callGroq(prompt: string, apiKey: string): Promise<string> {
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You write short, warm, professional Gulf Arabic WhatsApp pitches for B2B outreach.",
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(`Groq API ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  return (data.choices?.[0]?.message?.content ?? "").trim();
-}
-
-async function callGemini(prompt: string, apiKey: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-  });
-  if (!res.ok) {
-    throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  return (data.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
-}
-
 export const generatePitch = action({
   args: { leadId: v.id("leads") },
   handler: async (ctx, { leadId }) => {
@@ -109,6 +68,39 @@ export const generatePitch = action({
       };
     }
 
+    if (lead.optedOut) {
+      return {
+        ok: false as const,
+        reason: "opted-out" as const,
+        message: "This lead asked not to be contacted — drafting is blocked for do-not-contact leads.",
+      };
+    }
+
+    const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!groqKey && !geminiKey) {
+      return {
+        ok: false as const,
+        reason: "no-key" as const,
+        message:
+          "No free-tier LLM key configured yet. Add GROQ_API_KEY or GEMINI_API_KEY in your project's Keys / API keys settings, then try again.",
+      };
+    }
+
+    // Check the quota only after confirming a key exists — a missing key
+    // shouldn't cost the user one of their monthly drafts.
+    const usage = await ctx.runMutation(internal.usage.checkAndIncrementUsage, {
+      userId,
+      kind: "aiDrafts",
+    });
+    if (!usage.ok) {
+      return {
+        ok: false as const,
+        reason: "quota-exceeded" as const,
+        message: `You've used all ${usage.limit} AI drafts on the ${usage.plan} plan this month. Upgrade in Settings → Billing for more.`,
+      };
+    }
+
     const prompt = buildPrompt({
       name: lead.name,
       category: lead.category,
@@ -116,10 +108,9 @@ export const generatePitch = action({
       rating: lead.rating,
     });
 
-    const groqKey = process.env.GROQ_API_KEY;
     if (groqKey) {
       try {
-        const pitch = await callGroq(prompt, groqKey);
+        const pitch = await callGroq(WHATSAPP_SYSTEM_PROMPT, prompt, groqKey);
         return { ok: true as const, pitch, provider: "groq" as const, model: GROQ_MODEL };
       } catch (error) {
         return {
@@ -130,7 +121,6 @@ export const generatePitch = action({
       }
     }
 
-    const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
       try {
         const pitch = await callGemini(prompt, geminiKey);
