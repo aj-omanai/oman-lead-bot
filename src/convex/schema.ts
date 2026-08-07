@@ -87,6 +87,20 @@ const schema = defineSchema(
       aiDrafts: v.number(),
       emails: v.number(),
     }).index("by_user_month", ["userId", "month"]),
+
+    // Shared server-side discovery pool — refreshed by a daily Convex cron
+    // (crons.ts) that scrapes yellowpages.om. Users import rows into their own
+    // workspace via Leads → Discovery pool (deduped by name + phone).
+    scrapeResults: defineTable({
+      name: v.string(),
+      phone: v.string(),
+      rating: v.number(),
+      reviews: v.number(),
+      city: v.string(),
+      category: v.string(),
+      sourceUrl: v.string(),
+      scrapedAt: v.number(),
+    }).index("by_category", ["category"]),
   },
   {
     schemaValidation: false,

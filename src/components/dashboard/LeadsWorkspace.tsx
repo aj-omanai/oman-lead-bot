@@ -45,10 +45,13 @@ import {
   AlertTriangle,
   Check,
   Copy,
+  Download,
   FileUp,
+  Globe,
   Inbox,
   Loader2,
   MessageSquare,
+  RefreshCw,
   Search,
   ShieldOff,
   Sparkles,
@@ -394,6 +397,190 @@ function parseCsv(text: string): { leads: CsvLead[]; skipped: number } {
   return { leads, skipped };
 }
 
+function DiscoveryPoolDialog() {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState("all");
+  const [scraping, setScraping] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const stats = useQuery(api.scrapeStore.getPoolStats);
+  const pool = useQuery(api.scrapeStore.listPool, {
+    category: category === "all" ? undefined : category,
+    limit: 8,
+  });
+  const scrapeYellowpages = useAction(api.scraping.scrapeYellowpages);
+  const importFromPool = useMutation(api.scrapeStore.importFromPool);
+
+  const lastScraped = stats?.lastScrapedAt
+    ? new Date(stats.lastScrapedAt).toLocaleString()
+    : null;
+
+  const handleScrape = async () => {
+    setScraping(true);
+    try {
+      const result = await scrapeYellowpages({});
+      toast.success(t("Scrape finished", "اكتمل الكشط"), {
+        description: `${result.found} ${t("listings found", "إدراج")} · ${result.added} ${t("new", "جديد")} · ${result.updated} ${t("refreshed", "مُحدَّث")}${result.errors.length > 0 ? ` · ${result.errors.length} ${t("errors", "أخطاء")}` : ""}`,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("Scrape failed.", "فشل الكشط."));
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const handleImport = async () => {
+    setImporting(true);
+    try {
+      const result = await importFromPool({
+        category: category === "all" ? undefined : category,
+      });
+      toast.success(
+        t(
+          `Imported ${result.inserted} new lead${result.inserted === 1 ? "" : "s"}`,
+          `تم استيراد ${result.inserted} عميلاً جديداً`,
+        ),
+        { description: t("Duplicates were skipped automatically.", "تم تخطي التكرار تلقائياً.") },
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("Import failed.", "فشل الاستيراد."));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Globe className="size-4" />
+          {t("Discovery pool", "مستودع الاكتشاف")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Globe className="size-4 text-primary" />
+            {t("Server-side discovery pool", "مستودع الاكتشاف على الخادم")}
+          </DialogTitle>
+          <DialogDescription>
+            {t(
+              "A daily Convex cron scrapes yellowpages.om into this shared pool — no local Python required. Import rows into your workspace, deduped by name + phone.",
+              "كرون Convex يومي يكشط yellowpages.om في هذا المستودع المشترك — دون الحاجة إلى بايثون محلي. استورد الصفوف إلى مساحة عملك مع إزالة التكرار حسب الاسم والهاتف.",
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Stats */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-3 text-sm">
+          <div>
+            <span className="text-lg font-bold">{stats?.total ?? "…"}</span>{" "}
+            <span className="text-muted-foreground">{t("leads in pool", "عميل في المستودع")}</span>
+          </div>
+          <div>
+            <span className="text-lg font-bold">{stats?.categories.length ?? "…"}</span>{" "}
+            <span className="text-muted-foreground">{t("categories", "قطاع")}</span>
+          </div>
+          <div className="text-muted-foreground">
+            {t("Last scraped:", "آخر كشط:")}{" "}
+            <span className="font-medium text-foreground">
+              {lastScraped ?? t("never yet", "لم يحدث بعد")}
+            </span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="h-9 w-full sm:w-56">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("All categories", "كل القطاعات")}</SelectItem>
+              {(stats?.categories ?? []).map((c) => (
+                <SelectItem key={c.category} value={c.category}>
+                  {c.category} ({c.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={() => void handleScrape()}
+            disabled={scraping || importing}
+            className="gap-2"
+          >
+            {scraping ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            {scraping ? t("Scraping…", "جارٍ الكشط…") : t("Scrape now", "اكشط الآن")}
+          </Button>
+          <Button
+            onClick={() => void handleImport()}
+            disabled={importing || scraping || (stats?.total ?? 0) === 0}
+            className="gap-2"
+          >
+            {importing ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {t("Import into my leads", "استيراد إلى عملائي")}
+          </Button>
+        </div>
+
+        {/* Preview */}
+        <div className="max-h-64 overflow-y-auto rounded-xl border border-border/80">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-muted/80 text-start text-xs uppercase tracking-wider text-muted-foreground backdrop-blur">
+              <tr>
+                <th className="px-4 py-2 text-start">{t("Name", "الاسم")}</th>
+                <th className="px-4 py-2 text-start">{t("Phone", "الهاتف")}</th>
+                <th className="px-4 py-2 text-start">{t("City", "المدينة")}</th>
+                <th className="px-4 py-2 text-start">{t("Category", "القطاع")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pool === undefined ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                    {t("Loading…", "جارٍ التحميل…")}
+                  </td>
+                </tr>
+              ) : pool.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                    {t(
+                      "Pool is empty — run the first scrape now, or wait for tomorrow's cron.",
+                      "المستودع فارغ — شغّل أول كشط الآن، أو انتظر كرون الغد.",
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                pool.map((row) => (
+                  <tr key={row._id} className="border-t border-border/60">
+                    <td className="px-4 py-2 font-medium">{row.name}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                      {row.phone}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">{row.city}</td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">{row.category}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <DialogFooter className="justify-start">
+          <p className="text-xs leading-5 text-muted-foreground">
+            {t(
+              "Imports are capped at 500 leads per run and deduped against your workspace by name + phone.",
+              "الاستيراد محدود بـ 500 عميل في كل مرة وتتم إزالة التكرار حسب الاسم والهاتف في مساحة عملك.",
+            )}
+          </p>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ImportCsvDialog() {
   const { isRtl } = useRtl();
   const t = (en: string, ar: string) => (isRtl ? ar : en);
@@ -555,7 +742,10 @@ export function LeadsWorkspace() {
             {t(", and track what you've sent.", "، وتابع ما أرسلته.")}
           </p>
         </div>
-        <ImportCsvDialog />
+        <div className="flex flex-wrap gap-2">
+          <DiscoveryPoolDialog />
+          <ImportCsvDialog />
+        </div>
       </div>
 
       <Card className="border-border/80 shadow-sm">
