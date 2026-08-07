@@ -1,4 +1,6 @@
 import { LogoMark, Wordmark } from "@/components/brand";
+import { Billing } from "@/components/dashboard/Billing";
+import { EmailOutreach } from "@/components/dashboard/EmailOutreach";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
 import { Overview } from "@/components/dashboard/Overview";
 import { RtlToggle } from "@/components/RtlToggle";
@@ -14,23 +16,34 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
+  CreditCard,
   FileCode2,
   LayoutDashboard,
   ListChecks,
   LogOut,
+  Mail,
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export type TabId = "overview" | "scripts" | "setup" | "leads" | "settings";
+export type TabId =
+  | "overview"
+  | "scripts"
+  | "setup"
+  | "leads"
+  | "email"
+  | "billing"
+  | "settings";
 
 const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users }> = [
   { id: "overview", label: "Overview", labelAr: "نظرة عامة", icon: LayoutDashboard },
   { id: "scripts", label: "Script Library", labelAr: "مكتبة السكربتات", icon: FileCode2 },
   { id: "setup", label: "Setup Guide", labelAr: "دليل الإعداد", icon: ListChecks },
   { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
+  { id: "email", label: "Email Outreach", labelAr: "التواصل بالبريد", icon: Mail },
+  { id: "billing", label: "Billing", labelAr: "الفوترة", icon: CreditCard },
   { id: "settings", label: "Settings", labelAr: "الإعدادات", icon: SettingsIcon },
 ];
 
@@ -175,6 +188,8 @@ export default function Dashboard() {
             {tab === "scripts" && <ScriptLibrary />}
             {tab === "setup" && <SetupGuide />}
             {tab === "leads" && <LeadsWorkspace />}
+            {tab === "email" && <EmailOutreach onNavigate={setTab} />}
+            {tab === "billing" && <Billing />}
             {tab === "settings" && <Settings />}
           </motion.main>
         </div>

@@ -23,6 +23,9 @@ export const integrationStatus = query({
         providers: { groq: false, gemini: false },
         activeProvider: null as ActiveProvider,
         activeModel: null as string | null,
+        stripeConfigured: false,
+        stripeWebhookConfigured: false,
+        emailConfigured: false,
       };
     }
 
@@ -36,6 +39,9 @@ export const integrationStatus = query({
       providers: { groq, gemini },
       activeProvider: active,
       activeModel: active === "groq" ? GROQ_MODEL : active === "gemini" ? GEMINI_MODEL : null,
+      stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
+      stripeWebhookConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+      emailConfigured: Boolean(process.env.VLY_INTEGRATION_KEY),
     };
   },
 });

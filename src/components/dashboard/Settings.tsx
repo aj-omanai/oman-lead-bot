@@ -19,10 +19,12 @@ import {
   Circle,
   Copy,
   Cpu,
+  CreditCard,
   ExternalLink,
   KeyRound,
   Languages,
   Loader2,
+  Mail,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -257,6 +259,93 @@ export function Settings() {
                 onCheckedChange={setRtl}
                 aria-label="Toggle Arabic RTL interface"
               />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ===================== Billing & delivery ===================== */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.12 }}
+      >
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">
+              {t("Billing & delivery", "الفوترة والتوصيل")}
+            </CardTitle>
+            <CardDescription>
+              {t(
+                "Status of the Stripe checkout and the built-in email sender — read from the same secure Keys settings as the LLM keys.",
+                "حالة دفع Stripe ومرسل البريد المدمج — تُقرأ من إعدادات المفاتيح الآمنة نفسها كمفاتيح الذكاء الاصطناعي.",
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-4 rounded-xl border border-border/70 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <CreditCard className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">{t("Stripe checkout", "دفع Stripe")}</p>
+                  {status?.stripeConfigured && status.stripeWebhookConfigured ? (
+                    <Badge variant="outline" className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700">
+                      <CheckCircle2 className="me-1 size-3" />
+                      {t("Configured", "مُعد")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700">
+                      <Circle className="me-1 size-3" />
+                      {t("Not configured", "غير مُعد")}
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t(
+                    "Enables the plan cards in the Billing tab. Checkout uses inline price data — no Stripe products required. Point the webhook at",
+                    "يفعّل بطاقات الخطط في تبويب الفوترة. الدفع يستخدم أسعاراً مضمّنة — لا حاجة لمنتجات في Stripe. وجّه الويب هوك إلى",
+                  )}{" "}
+                  <span className="font-mono text-foreground">{"<site-url>/stripe-webhook"}</span>
+                  {t(" with STRIPE_WEBHOOK_SECRET.", " مع STRIPE_WEBHOOK_SECRET.")}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <EnvVarChip name="STRIPE_SECRET_KEY" />
+                  <EnvVarChip name="STRIPE_WEBHOOK_SECRET" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 rounded-xl border border-border/70 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                <Mail className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">{t("Email delivery", "توصيل البريد")}</p>
+                  {status?.emailConfigured ? (
+                    <Badge variant="outline" className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700">
+                      <CheckCircle2 className="me-1 size-3" />
+                      {t("Ready", "جاهز")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700">
+                      <Circle className="me-1 size-3" />
+                      {t("Missing key", "المفتاح مفقود")}
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t(
+                    "Powers the Email Outreach tab via the built-in integration. No separate provider to configure — usage bills to VLY_INTEGRATION_KEY (auto-injected on this project).",
+                    "يشغّل تبويب التواصل عبر البريد عبر التكامل المدمج. لا حاجة لمزود منفصل — الاستخدام يُحاسب على VLY_INTEGRATION_KEY (مُحقن تلقائياً في هذا المشروع).",
+                  )}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <EnvVarChip name="VLY_INTEGRATION_KEY" />
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

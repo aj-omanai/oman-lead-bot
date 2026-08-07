@@ -203,7 +203,11 @@ export const setStatus = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return;
-    await ctx.db.patch(args.id, { status: args.status });
+    // Record when the lead was last contacted whenever it moves to "sent".
+    await ctx.db.patch(args.id, {
+      status: args.status,
+      ...(args.status === "sent" ? { lastContactedAt: Date.now() } : {}),
+    });
   },
 });
 
@@ -227,7 +231,69 @@ export const setPitch = mutation({
     if (!userId) return;
     const lead = await ctx.db.get(args.id);
     if (!lead || lead.userId !== userId) return;
+    if (lead.optedOut) {
+      throw new Error("This lead opted out — do-not-contact is on.");
+    }
     await ctx.db.patch(args.id, { pitch: args.pitch, status: "drafted" });
+  },
+});
+
+/** Do-not-contact toggle — blocks AI drafting and sending on both channels. */
+export const setOptOut = mutation({
+  args: { id: v.id("leads"), optedOut: v.boolean() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, { optedOut: args.optedOut });
+  },
+});
+
+/** Add or update a lead's email address (used by Email Outreach). */
+export const setEmail = mutation({
+  args: { id: v.id("leads"), email: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, { email: args.email.trim() || undefined });
+  },
+});
+
+/** Save an AI-drafted email subject + body onto the lead. */
+export const setEmailDraft = mutation({
+  args: {
+    id: v.id("leads"),
+    emailSubject: v.optional(v.string()),
+    emailBody: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    if (lead.optedOut) {
+      throw new Error("This lead opted out — do-not-contact is on.");
+    }
+    await ctx.db.patch(args.id, {
+      emailSubject: args.emailSubject ?? undefined,
+      emailBody: args.emailBody ?? undefined,
+      status: "drafted",
+    });
+  },
+});
+
+/** Free-form notes on a lead (e.g. why they opted out). */
+export const updateNotes = mutation({
+  args: { id: v.id("leads"), notes: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, { notes: args.notes?.trim() || undefined });
   },
 });
 
@@ -246,6 +312,7 @@ export const importLeads = mutation({
         city: v.optional(v.string()),
         category: v.optional(v.string()),
         source: v.optional(v.string()),
+        email: v.optional(v.string()),
         pitch: v.optional(v.string()),
         status: v.optional(
           v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
@@ -279,6 +346,7 @@ export const importLeads = mutation({
         city: row.city ?? "",
         category: row.category ?? "General",
         source: row.source ?? "CSV import",
+        email: row.email?.trim() || undefined,
         pitch: row.pitch,
         status: row.status ?? "new",
       });

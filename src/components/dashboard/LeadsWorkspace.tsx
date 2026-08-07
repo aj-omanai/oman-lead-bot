@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -49,6 +50,7 @@ import {
   Loader2,
   MessageSquare,
   Search,
+  ShieldOff,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -87,9 +89,32 @@ function PitchDialog({ lead }: { lead: Lead }) {
   const [copied, setCopied] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [notes, setNotes] = useState(lead.notes ?? "");
+  const [notesBusy, setNotesBusy] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
   const setStatus = useMutation(api.leads.setStatus);
   const setPitch = useMutation(api.leads.setPitch);
+  const updateNotes = useMutation(api.leads.updateNotes);
   const generatePitch = useAction(api.pitch.generatePitch);
+
+  // Keep the notes editor in sync if the lead changes elsewhere.
+  useEffect(() => {
+    setNotes(lead.notes ?? "");
+  }, [lead.notes]);
+
+  const saveNotes = async () => {
+    setNotesBusy(true);
+    setNotesSaved(false);
+    try {
+      await updateNotes({ id: lead._id, notes });
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 1600);
+    } catch {
+      // silent — the textarea stays editable
+    } finally {
+      setNotesBusy(false);
+    }
+  };
 
   const copyPitch = async () => {
     await navigator.clipboard.writeText(lead.pitch ?? "");
@@ -132,6 +157,18 @@ function PitchDialog({ lead }: { lead: Lead }) {
           </DialogDescription>
         </DialogHeader>
 
+        {lead.optedOut && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-800">
+            <ShieldOff className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <span>
+              {t(
+                "Do-not-contact is on for this lead — AI drafting and sending are blocked until you re-enable contact in the Leads tab.",
+                "التواصل ممنوع مع هذا العميل — تم إيقاف الصياغة والإرسال حتى تعيد تفعيل التواصل من تبويب العملاء.",
+              )}
+            </span>
+          </div>
+        )}
+
         {lead.pitch ? (
           <div className="rounded-xl border border-border/80 bg-muted/40 p-4">
             <p
@@ -166,6 +203,34 @@ function PitchDialog({ lead }: { lead: Lead }) {
           </div>
         )}
 
+        {/* Notes — handy for recording why a lead opted out. */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {t("Notes", "ملاحظات")}
+            </p>
+            {notesSaved && <span className="text-xs font-medium text-emerald-600">{t("Saved", "تم الحفظ")}</span>}
+          </div>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t("e.g. asked to be removed from outreach lists.", "مثال: طلب إزالته من قوائم التواصل.")}
+            className="h-16 resize-none text-sm"
+          />
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void saveNotes()}
+              disabled={notesBusy}
+              className="h-7 gap-1.5 px-2 text-xs"
+            >
+              {notesBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+              {t("Save notes", "حفظ الملاحظات")}
+            </Button>
+          </div>
+        </div>
+
         <DialogFooter className="gap-2 sm:justify-between">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -178,7 +243,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
               {copied ? t("Copied", "تم النسخ") : t("Copy pitch", "نسخ الرسالة")}
             </Button>
             {lead.pitch && (
-              <Button variant="outline" size="sm" onClick={handleDraft} disabled={drafting}>
+              <Button variant="outline" size="sm" onClick={handleDraft} disabled={drafting || lead.optedOut}>
                 {drafting ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
@@ -189,7 +254,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
             )}
           </div>
           {!lead.pitch ? (
-            <Button size="sm" onClick={handleDraft} disabled={drafting} className="gap-1.5">
+            <Button size="sm" onClick={handleDraft} disabled={drafting || lead.optedOut} className="gap-1.5">
               {drafting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
@@ -198,7 +263,7 @@ function PitchDialog({ lead }: { lead: Lead }) {
               {t("Draft with AI", "صياغة بالذكاء الاصطناعي")}
             </Button>
           ) : (
-            lead.status !== "sent" && (
+            lead.status !== "sent" && !lead.optedOut && (
               <Button
                 size="sm"
                 onClick={() => void setStatus({ id: lead._id, status: "sent" })}
@@ -221,6 +286,7 @@ interface CsvLead {
   city?: string;
   category?: string;
   source?: string;
+  email?: string;
   pitch?: string;
   status?: "new" | "drafted" | "sent";
 }
@@ -242,6 +308,8 @@ const HEADER_ALIASES: Record<string, keyof CsvLead> = {
   sector: "category",
   source: "source",
   sourceurl: "source",
+  email: "email",
+  mail: "email",
   pitch: "pitch",
   message: "pitch",
   status: "status",
@@ -310,6 +378,7 @@ function parseCsv(text: string): { leads: CsvLead[]; skipped: number } {
         field === "city" ||
         field === "category" ||
         field === "source" ||
+        field === "email" ||
         field === "pitch"
       ) {
         lead[field] = value;
@@ -431,6 +500,7 @@ export function LeadsWorkspace() {
   const leads = useQuery(api.leads.list);
   const seed = useMutation(api.leads.seed);
   const setStatus = useMutation(api.leads.setStatus);
+  const setOptOut = useMutation(api.leads.setOptOut);
   const seededRef = useRef(false);
 
   const [query, setQuery] = useState("");
@@ -553,6 +623,7 @@ export function LeadsWorkspace() {
                     <TableHead className="min-w-36">Phone</TableHead>
                     <TableHead className="min-w-28">Pitch</TableHead>
                     <TableHead className="min-w-32">Status</TableHead>
+                    <TableHead className="min-w-32">{t("No-contact", "لا تواصل")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -562,7 +633,10 @@ export function LeadsWorkspace() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
-                      className="group border-b transition-colors hover:bg-accent/40"
+                      className={cn(
+                        "group border-b transition-colors hover:bg-accent/40",
+                        lead.optedOut && "bg-muted/40 opacity-70",
+                      )}
                     >
                       <TableCell>
                         <p className="font-medium">{lead.name}</p>
@@ -609,6 +683,26 @@ export function LeadsWorkspace() {
                           </Badge>
                         </button>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!lead.optedOut}
+                            onCheckedChange={(checked) =>
+                              void setOptOut({ id: lead._id, optedOut: !checked })
+                            }
+                            aria-label={t("Allow contact", "السماح بالتواصل")}
+                          />
+                          {lead.optedOut && (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700"
+                            >
+                              <ShieldOff className="me-1 size-3" />
+                              {t("Opted out", "امتنع")}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                     </motion.tr>
                   ))}
                 </TableBody>
@@ -617,11 +711,18 @@ export function LeadsWorkspace() {
           )}
         </CardContent>
 
-        <CardFooter className="border-t px-6 py-3">
+        <CardFooter className="flex flex-col gap-1 border-t px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             {t(
               "Click a status badge to move it through the pipeline: new → drafted → sent. The \"Draft with AI\" button uses your free Groq or Gemini key.",
               "انقر على شارة الحالة لتحريك العميل عبر المراحل: جديد ← مسودة ← مرسل. زر \"الصياغة بالذكاء الاصطناعي\" يستخدم مفتاح Groq أو Gemini المجاني.",
+            )}
+          </p>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldOff className="size-3.5 text-amber-600" />
+            {t(
+              "The No-contact switch blocks AI drafting and sending on both channels.",
+              "مفتاح \"لا تواصل\" يوقف الصياغة والإرسال بالذكاء الاصطناعي على القناتين.",
             )}
           </p>
         </CardFooter>

@@ -16,6 +16,10 @@ import { GEMINI_MODEL, GROQ_MODEL } from "./integrations";
  *   2. GEMINI_API_KEY -> gemini-2.5-flash
  *
  * Keys are read from the project's Keys / API keys settings (env vars).
+ *
+ * Every draft is metered: the plan's monthly AI-draft quota is checked BEFORE
+ * the LLM call and incremented AFTER it succeeds (see billing.ts). Leads with
+ * do-not-contact enabled are blocked outright.
  */
 
 type LeadInfo = {
@@ -43,7 +47,7 @@ function buildPrompt(lead: LeadInfo): string {
   );
 }
 
-async function callGroq(prompt: string, apiKey: string): Promise<string> {
+export async function callGroq(prompt: string, apiKey: string): Promise<string> {
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -72,7 +76,7 @@ async function callGroq(prompt: string, apiKey: string): Promise<string> {
   return (data.choices?.[0]?.message?.content ?? "").trim();
 }
 
-async function callGemini(prompt: string, apiKey: string): Promise<string> {
+export async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(url, {
     method: "POST",
@@ -88,9 +92,18 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   return (data.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
 }
 
+export type DraftResult =
+  | { ok: true; pitch: string; provider: "groq" | "gemini"; model: string }
+  | {
+      ok: false;
+      reason: "no-auth" | "no-key" | "quota" | "opted-out" | "error";
+      message: string;
+      plan?: "free" | "pro" | "business";
+    };
+
 export const generatePitch = action({
   args: { leadId: v.id("leads") },
-  handler: async (ctx, { leadId }) => {
+  handler: async (ctx, { leadId }): Promise<DraftResult> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       return {
@@ -109,6 +122,39 @@ export const generatePitch = action({
       };
     }
 
+    // Do-not-contact: block drafting entirely.
+    if (lead.optedOut) {
+      return {
+        ok: false as const,
+        reason: "opted-out" as const,
+        message:
+          "This lead opted out — AI drafting and sending are blocked. Turn off do-not-contact in the Leads tab to draft again.",
+      };
+    }
+
+    // Quota: check BEFORE the paid LLM call, then increment after success.
+    const usage = await ctx.runQuery(api.billing.snapshotUsage);
+    if (!usage) {
+      return {
+        ok: false as const,
+        reason: "error" as const,
+        message: "Could not read your plan usage — try again.",
+      };
+    }
+    if (usage.aiDraftsUsed >= usage.limits.aiDrafts) {
+      const planName =
+        usage.plan === "business" ? "Business" : usage.plan === "pro" ? "Pro" : "Free";
+      return {
+        ok: false as const,
+        reason: "quota" as const,
+        plan: usage.plan,
+        message:
+          usage.plan === "free"
+            ? `You've used all ${usage.limits.aiDrafts} AI drafts on the Free plan this month. Upgrade to Pro (300 drafts/mo) or Business (1,500 drafts/mo) in the Billing tab.`
+            : `You've used all ${usage.limits.aiDrafts} AI drafts on ${planName} this month. They reset on your next billing cycle.`,
+      };
+    }
+
     const prompt = buildPrompt({
       name: lead.name,
       category: lead.category,
@@ -120,6 +166,7 @@ export const generatePitch = action({
     if (groqKey) {
       try {
         const pitch = await callGroq(prompt, groqKey);
+        await ctx.runMutation(api.billing.recordUsage, { counter: "aiDrafts" });
         return { ok: true as const, pitch, provider: "groq" as const, model: GROQ_MODEL };
       } catch (error) {
         return {
@@ -134,6 +181,7 @@ export const generatePitch = action({
     if (geminiKey) {
       try {
         const pitch = await callGemini(prompt, geminiKey);
+        await ctx.runMutation(api.billing.recordUsage, { counter: "aiDrafts" });
         return { ok: true as const, pitch, provider: "gemini" as const, model: GEMINI_MODEL };
       } catch (error) {
         return {
