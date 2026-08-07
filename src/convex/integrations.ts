@@ -26,6 +26,9 @@ export const integrationStatus = query({
         stripeConfigured: false,
         stripeWebhookConfigured: false,
         emailConfigured: false,
+        zerobounceConfigured: false,
+        whatsappConfigured: false,
+        whatsappWebhookConfigured: false,
       };
     }
 
@@ -42,6 +45,11 @@ export const integrationStatus = query({
       stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
       stripeWebhookConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
       emailConfigured: Boolean(process.env.VLY_INTEGRATION_KEY),
+      zerobounceConfigured: Boolean(process.env.ZEROBOUNCE_API_KEY),
+      whatsappConfigured: Boolean(
+        process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID,
+      ),
+      whatsappWebhookConfigured: Boolean(process.env.WHATSAPP_VERIFY_TOKEN),
     };
   },
 });

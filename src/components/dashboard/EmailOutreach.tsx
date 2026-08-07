@@ -38,6 +38,8 @@ import {
   Mail,
   Search,
   Send,
+  ShieldAlert,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -45,6 +47,44 @@ import { toast } from "sonner";
 
 type Lead = Doc<"leads">;
 type TabId = "overview" | "scripts" | "setup" | "leads" | "settings" | "billing" | "email";
+
+const EMAIL_VERIFY_STYLE: Record<string, { label: string; className: string; safe: boolean }> = {
+  valid: {
+    label: "Valid",
+    className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
+    safe: true,
+  },
+  invalid: {
+    label: "Invalid",
+    className: "border-red-500/25 bg-red-500/10 text-red-700",
+    safe: false,
+  },
+  "catch-all": {
+    label: "Catch-all",
+    className: "border-amber-500/25 bg-amber-500/10 text-amber-700",
+    safe: false,
+  },
+  unknown: {
+    label: "Unknown",
+    className: "border-muted bg-muted/60 text-muted-foreground",
+    safe: false,
+  },
+  spamtrap: {
+    label: "Spam trap",
+    className: "border-red-500/25 bg-red-500/10 text-red-700",
+    safe: false,
+  },
+  abuse: {
+    label: "Abuse",
+    className: "border-red-500/25 bg-red-500/10 text-red-700",
+    safe: false,
+  },
+  do_not_mail: {
+    label: "Do not mail",
+    className: "border-red-500/25 bg-red-500/10 text-red-700",
+    safe: false,
+  },
+};
 
 function EmailCell({ lead }: { lead: Lead }) {
   const { isRtl } = useRtl();
@@ -101,10 +141,13 @@ export function EmailOutreach({ onNavigate }: { onNavigate: (tab: TabId) => void
   const status = useQuery(api.billing.getBillingStatus);
   const draftEmail = useAction(api.outreach.draftEmail);
   const sendEmail = useAction(api.outreach.sendEmail);
+  const verifyEmail = useAction(api.outreach.verifyEmail);
+  const zerobounceConfigured = status?.zerobounceConfigured ?? false;
 
   const [query, setQuery] = useState("");
   const [onlyWithEmail, setOnlyWithEmail] = useState(false);
   const [draftingId, setDraftingId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [dialogLead, setDialogLead] = useState<Lead | null>(null);
   const [dialogSubject, setDialogSubject] = useState("");
   const [dialogBody, setDialogBody] = useState("");
@@ -145,6 +188,27 @@ export function EmailOutreach({ onNavigate }: { onNavigate: (tab: TabId) => void
       toast.error(error instanceof Error ? error.message : t("Drafting failed.", "فشلت الصياغة."));
     } finally {
       setDraftingId(null);
+    }
+  };
+
+  const handleVerify = async (lead: Lead) => {
+    setVerifyingId(lead._id);
+    try {
+      const result = await verifyEmail({ leadId: lead._id });
+      if (result.ok) {
+        toast.success(t("Email verified!", "تم التحقق من البريد!"), {
+          description: t(
+            `ZeroBounce says: ${result.status}${result.didYouMean ? ` · did you mean ${result.didYouMean}?` : ""}`,
+            `قال ZeroBounce: ${result.status}${result.didYouMean ? ` · هل تقصد ${result.didYouMean}؟` : ""}`,
+          ),
+        });
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("Verification failed.", "فشل التحقق."));
+    } finally {
+      setVerifyingId(null);
     }
   };
 
@@ -282,8 +346,9 @@ export function EmailOutreach({ onNavigate }: { onNavigate: (tab: TabId) => void
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="min-w-52">{t("Company", "الشركة")}</TableHead>
                       <TableHead className="min-w-48">{t("Email", "البريد")}</TableHead>
+                      <TableHead className="min-w-28">{t("Verified", "التحقق")}</TableHead>
                       <TableHead className="min-w-36">{t("Subject", "الموضوع")}</TableHead>
-                      <TableHead className="min-w-44">{t("Actions", "الإجراءات")}</TableHead>
+                      <TableHead className="min-w-52">{t("Actions", "الإجراءات")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -309,13 +374,49 @@ export function EmailOutreach({ onNavigate }: { onNavigate: (tab: TabId) => void
                         <TableCell>
                           <EmailCell lead={lead} />
                         </TableCell>
+                        <TableCell>
+                          {lead.emailVerified ? (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "rounded-full",
+                                EMAIL_VERIFY_STYLE[lead.emailVerified]?.className ?? "border-muted bg-muted/60 text-muted-foreground",
+                              )}
+                              title={lead.emailVerifiedAt ? new Date(lead.emailVerifiedAt).toLocaleString() : undefined}
+                            >
+                              {EMAIL_VERIFY_STYLE[lead.emailVerified]?.safe ? (
+                                <ShieldCheck className="me-1 size-3" />
+                              ) : (
+                                <ShieldAlert className="me-1 size-3" />
+                              )}
+                              {EMAIL_VERIFY_STYLE[lead.emailVerified]?.label ?? lead.emailVerified}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/60">{t("Not verified", "لم يُتحقق")}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="max-w-52 truncate text-xs text-muted-foreground">
                           {lead.emailSubject ?? (
                             <span className="text-muted-foreground/60">{t("No draft yet", "لا مسودة بعد")}</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1.5 px-2 text-xs"
+                              disabled={!lead.email || lead.optedOut || verifyingId !== null || !zerobounceConfigured}
+                              onClick={() => void handleVerify(lead)}
+                              title={zerobounceConfigured ? t("Validate with ZeroBounce", "تحقق عبر ZeroBounce") : t("Add ZEROBOUNCE_API_KEY in Settings", "أضف ZEROBOUNCE_API_KEY في الإعدادات")}
+                            >
+                              {verifyingId === lead._id ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <ShieldCheck className="size-3.5 text-primary" />
+                              )}
+                              {t("Verify", "تحقق")}
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"

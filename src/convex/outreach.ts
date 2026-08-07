@@ -259,3 +259,73 @@ export const sendEmail = action({
     return { ok: true as const, status: status === "sent" ? "sent" : "queued" };
   },
 });
+
+/**
+ * ZeroBounce email verification — validates a scraped/imported address before
+ * outreach so bounces and spamtraps don't hurt sender reputation. The free
+ * tier includes ~100 validations per month; the result is stored on the lead.
+ */
+export const verifyEmail = action({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, { leadId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { ok: false as const, reason: "no-auth" as const, message: "Sign in to verify emails." };
+    }
+
+    const lead = await ctx.runQuery(api.leads.getLead, { id: leadId });
+    if (!lead) {
+      return { ok: false as const, reason: "error" as const, message: "Lead not found or no longer available." };
+    }
+    if (!lead.email) {
+      return {
+        ok: false as const,
+        reason: "no-email" as const,
+        message: "Add an email address to this lead first — there's nothing to verify.",
+      };
+    }
+
+    const apiKey = process.env.ZEROBOUNCE_API_KEY;
+    if (!apiKey) {
+      return {
+        ok: false as const,
+        reason: "no-key" as const,
+        message:
+          "ZeroBounce isn't configured. Add ZEROBOUNCE_API_KEY in your project's Keys / API keys settings (free tier: 100 validations/month).",
+      };
+    }
+
+    const url =
+      `https://api.zerobounce.net/v2/validate?api_key=${encodeURIComponent(apiKey)}` +
+      `&email=${encodeURIComponent(lead.email)}`;
+
+    let data: Record<string, unknown>;
+    try {
+      const res = await fetch(url);
+      data = (await res.json()) as Record<string, unknown>;
+    } catch (error) {
+      return {
+        ok: false as const,
+        reason: "error" as const,
+        message: `ZeroBounce request failed: ${error instanceof Error ? error.message : "network error"}`,
+      };
+    }
+
+    const status = typeof data.status === "string" ? data.status : "unknown";
+    await ctx.runMutation(api.leads.setEmailVerified, {
+      id: leadId,
+      emailVerified: status,
+      emailVerifiedAt: Date.now(),
+    });
+
+    const safeToSend = data.safe_to_send === true;
+    const didYouMean = typeof data.did_you_mean === "string" ? data.did_you_mean : null;
+    return {
+      ok: true as const,
+      status,
+      safeToSend,
+      didYouMean,
+      domain: typeof data.domain === "string" ? data.domain : null,
+    };
+  },
+});

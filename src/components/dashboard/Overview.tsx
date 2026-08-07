@@ -17,6 +17,7 @@ import {
   CreditCard,
   Crown,
   Mail,
+  MessageCircle,
   Send,
   Sparkles,
   Star,
@@ -306,12 +307,20 @@ export function Overview({
                     progressClassName: "",
                   },
                   {
+                    icon: MessageCircle,
+                    label: t("WhatsApp", "واتساب"),
+                    used: billing.usage.whatsapp.used,
+                    limit: billing.usage.whatsapp.limit,
+                    iconClassName: "text-emerald-600",
+                    progressClassName: "[&>div]:bg-emerald-500",
+                  },
+                  {
                     icon: Mail,
                     label: t("Emails", "البريد"),
                     used: billing.usage.emails.used,
                     limit: billing.usage.emails.limit,
-                    iconClassName: "text-emerald-600",
-                    progressClassName: "[&>div]:bg-emerald-500",
+                    iconClassName: "text-sky-600",
+                    progressClassName: "[&>div]:bg-sky-500",
                   },
                 ].map((item) => (
                   <div key={item.label}>

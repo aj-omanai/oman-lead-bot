@@ -22,6 +22,7 @@ import {
   KeyRound,
   Loader2,
   Mail,
+  MessageCircle,
   ShieldCheck,
   Sparkles,
   Zap,
@@ -48,8 +49,8 @@ const PLAN_CARDS: Array<{
     price: 0,
     blurbEn: "Try the pipeline end-to-end.",
     blurbAr: "جرّب خط الإنتاج كاملاً.",
-    featuresEn: ["20 AI drafts / month", "0 emails", "1 scrape source"],
-    featuresAr: ["20 صياغة ذكاء اصطناعي شهرياً", "0 بريد إلكتروني", "مصدر كشط واحد"],
+    featuresEn: ["20 AI drafts / month", "0 WhatsApp messages", "0 emails"],
+    featuresAr: ["20 صياغة ذكاء اصطناعي شهرياً", "0 رسالة واتساب", "0 بريد إلكتروني"],
     icon: Sparkles,
   },
   {
@@ -58,8 +59,8 @@ const PLAN_CARDS: Array<{
     price: 19,
     blurbEn: "For solo operators scaling outreach.",
     blurbAr: "للمستقلين الذين يوسّعون حملاتهم.",
-    featuresEn: ["300 AI drafts / month", "200 emails / month", "5 scrape sources"],
-    featuresAr: ["300 صياغة ذكاء اصطناعي شهرياً", "200 بريد إلكتروني شهرياً", "5 مصادر كشط"],
+    featuresEn: ["300 AI drafts / month", "200 WhatsApp messages", "200 emails / month"],
+    featuresAr: ["300 صياغة ذكاء اصطناعي شهرياً", "200 رسالة واتساب", "200 بريد إلكتروني شهرياً"],
     icon: Zap,
     highlight: true,
   },
@@ -71,12 +72,14 @@ const PLAN_CARDS: Array<{
     blurbAr: "للفرق الصغيرة الجادة.",
     featuresEn: [
       "1,500 AI drafts / month",
+      "1,000 WhatsApp messages",
       "1,000 emails / month",
       "20 scrape sources",
       "5 seats",
     ],
     featuresAr: [
       "1,500 صياغة ذكاء اصطناعي شهرياً",
+      "1,000 رسالة واتساب",
       "1,000 بريد إلكتروني شهرياً",
       "20 مصدر كشط",
       "5 مقاعد",
@@ -230,7 +233,7 @@ export function Billing() {
                     : "Business"}
               </Badge>
             </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2">
+            <CardContent className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {[
                 {
                   icon: Sparkles,
@@ -241,12 +244,20 @@ export function Billing() {
                   progressClassName: "",
                 },
                 {
+                  icon: MessageCircle,
+                  label: t("WhatsApp messages", "رسائل واتساب"),
+                  used: status.usage.whatsapp.used,
+                  limit: status.usage.whatsapp.limit,
+                  iconClassName: "text-emerald-600",
+                  progressClassName: "[&>div]:bg-emerald-500",
+                },
+                {
                   icon: Mail,
                   label: t("Emails sent", "البريد المرسل"),
                   used: status.usage.emails.used,
                   limit: status.usage.emails.limit,
-                  iconClassName: "text-emerald-600",
-                  progressClassName: "[&>div]:bg-emerald-500",
+                  iconClassName: "text-sky-600",
+                  progressClassName: "[&>div]:bg-sky-500",
                 },
               ].map((item) => (
                 <div key={item.label}>

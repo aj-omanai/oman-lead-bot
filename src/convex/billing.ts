@@ -23,6 +23,7 @@ export const PLANS = {
     price: 0,
     aiDrafts: 20,
     emails: 0,
+    whatsapp: 0,
     sources: 1,
     seats: 1,
   },
@@ -32,6 +33,7 @@ export const PLANS = {
     price: 1900, // $19/mo
     aiDrafts: 300,
     emails: 200,
+    whatsapp: 200,
     sources: 5,
     seats: 1,
   },
@@ -41,13 +43,14 @@ export const PLANS = {
     price: 4900, // $49/mo
     aiDrafts: 1500,
     emails: 1000,
+    whatsapp: 1000,
     sources: 20,
     seats: 5,
   },
 } as const;
 
 export type PlanId = keyof typeof PLANS;
-export type UsageCounter = "aiDrafts" | "emails";
+export type UsageCounter = "aiDrafts" | "emails" | "whatsapp";
 
 /** "YYYY-MM" key (UTC) used to bucket the per-user, per-month usage rows. */
 export function monthKey(date: Date = new Date()): string {
@@ -104,11 +107,13 @@ export const snapshotUsage = query({
       limits: {
         aiDrafts: limits.aiDrafts,
         emails: limits.emails,
+        whatsapp: limits.whatsapp,
         sources: limits.sources,
         seats: limits.seats,
       },
       aiDraftsUsed: row?.aiDrafts ?? 0,
       emailsUsed: row?.emails ?? 0,
+      whatsappUsed: row?.whatsapp ?? 0,
     };
   },
 });
@@ -116,7 +121,11 @@ export const snapshotUsage = query({
 /** Increment a per-user, per-month usage counter (creates the row lazily). */
 export const recordUsage = mutation({
   args: {
-    counter: v.union(v.literal("aiDrafts"), v.literal("emails")),
+    counter: v.union(
+      v.literal("aiDrafts"),
+      v.literal("emails"),
+      v.literal("whatsapp"),
+    ),
     amount: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -130,19 +139,22 @@ export const recordUsage = mutation({
         q.eq("userId", userId).eq("month", month),
       )
       .first();
+    const bump = {
+      aiDrafts: args.counter === "aiDrafts" ? delta : 0,
+      emails: args.counter === "emails" ? delta : 0,
+      whatsapp: args.counter === "whatsapp" ? delta : 0,
+    };
     if (existing) {
       await ctx.db.patch(existing._id, {
-        aiDrafts:
-          args.counter === "aiDrafts" ? existing.aiDrafts + delta : existing.aiDrafts,
-        emails:
-          args.counter === "emails" ? existing.emails + delta : existing.emails,
+        aiDrafts: existing.aiDrafts + bump.aiDrafts,
+        emails: existing.emails + bump.emails,
+        whatsapp: existing.whatsapp + bump.whatsapp,
       });
     } else {
       await ctx.db.insert("usage", {
         userId,
         month,
-        aiDrafts: args.counter === "aiDrafts" ? delta : 0,
-        emails: args.counter === "emails" ? delta : 0,
+        ...bump,
       });
     }
     return { ok: true };
@@ -168,16 +180,23 @@ export const getBillingStatus = query({
       limits: {
         aiDrafts: limits.aiDrafts,
         emails: limits.emails,
+        whatsapp: limits.whatsapp,
         sources: limits.sources,
         seats: limits.seats,
       },
       usage: {
         aiDrafts: { used: row?.aiDrafts ?? 0, limit: limits.aiDrafts },
         emails: { used: row?.emails ?? 0, limit: limits.emails },
+        whatsapp: { used: row?.whatsapp ?? 0, limit: limits.whatsapp },
       },
       stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
       stripeWebhookConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
       emailConfigured: Boolean(process.env.VLY_INTEGRATION_KEY),
+      zerobounceConfigured: Boolean(process.env.ZEROBOUNCE_API_KEY),
+      whatsappConfigured: Boolean(
+        process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID,
+      ),
+      whatsappWebhookConfigured: Boolean(process.env.WHATSAPP_VERIFY_TOKEN),
     };
   },
 });

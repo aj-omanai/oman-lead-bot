@@ -2,6 +2,7 @@ import { LogoMark, Wordmark } from "@/components/brand";
 import { Billing } from "@/components/dashboard/Billing";
 import { EmailOutreach } from "@/components/dashboard/EmailOutreach";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
+import { WhatsAppOutreach } from "@/components/dashboard/WhatsAppOutreach";
 import { Overview } from "@/components/dashboard/Overview";
 import { RtlToggle } from "@/components/RtlToggle";
 import { ScriptLibrary } from "@/components/dashboard/ScriptLibrary";
@@ -22,6 +23,7 @@ import {
   ListChecks,
   LogOut,
   Mail,
+  MessageCircle,
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
@@ -34,6 +36,7 @@ export type TabId =
   | "setup"
   | "leads"
   | "email"
+  | "whatsapp"
   | "billing"
   | "settings";
 
@@ -43,6 +46,7 @@ const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users
   { id: "setup", label: "Setup Guide", labelAr: "دليل الإعداد", icon: ListChecks },
   { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
   { id: "email", label: "Email Outreach", labelAr: "التواصل بالبريد", icon: Mail },
+  { id: "whatsapp", label: "WhatsApp Outreach", labelAr: "التواصل بواتساب", icon: MessageCircle },
   { id: "billing", label: "Billing", labelAr: "الفوترة", icon: CreditCard },
   { id: "settings", label: "Settings", labelAr: "الإعدادات", icon: SettingsIcon },
 ];
@@ -189,6 +193,7 @@ export default function Dashboard() {
             {tab === "setup" && <SetupGuide />}
             {tab === "leads" && <LeadsWorkspace />}
             {tab === "email" && <EmailOutreach onNavigate={setTab} />}
+            {tab === "whatsapp" && <WhatsAppOutreach onNavigate={setTab} />}
             {tab === "billing" && <Billing />}
             {tab === "settings" && <Settings />}
           </motion.main>

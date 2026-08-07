@@ -58,6 +58,19 @@ const schema = defineSchema(
       optedOut: v.optional(v.boolean()),
       lastContactedAt: v.optional(v.number()),
       notes: v.optional(v.string()),
+      // WhatsApp Cloud API delivery tracking (updated via webhook).
+      whatsappStatus: v.optional(
+        v.union(
+          v.literal("sent"),
+          v.literal("delivered"),
+          v.literal("read"),
+          v.literal("failed"),
+        ),
+      ),
+      whatsappMessageId: v.optional(v.string()),
+      // ZeroBounce email verification result.
+      emailVerified: v.optional(v.string()),
+      emailVerifiedAt: v.optional(v.number()),
       status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
     }).index("by_user", ["userId"]),
 
@@ -86,6 +99,7 @@ const schema = defineSchema(
       month: v.string(),
       aiDrafts: v.number(),
       emails: v.number(),
+      whatsapp: v.number(),
     }).index("by_user_month", ["userId", "month"]),
 
     // Shared server-side discovery pool — refreshed by a daily Convex cron

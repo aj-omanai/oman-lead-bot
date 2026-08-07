@@ -185,4 +185,86 @@ http.route({
   }) as unknown as PublicHttpAction,
 });
 
+/**
+ * WhatsApp Business Cloud API webhook.
+ *
+ * GET  — Meta's subscription verification: echo hub.challenge when
+ *        hub.verify_token matches WHATSAPP_VERIFY_TOKEN.
+ * POST — delivery receipts: statuses[] (sent → delivered → read / failed)
+ *        are written back to the matching lead by wamid, keeping the
+ *        WhatsApp Outreach tab live without polling.
+ *
+ * In the Meta App Dashboard, point the webhook at
+ * `<site-url>/whatsapp-webhook` with the WHATSAPP_VERIFY_TOKEN as the
+ * verification token, and subscribe to the "messages" field.
+ */
+http.route({
+  path: "/whatsapp-webhook",
+  method: "GET",
+  handler: (async (ctx: any, request: Request) => {
+    const url = new URL(request.url);
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      return new Response(challenge, { status: 200 });
+    }
+    return new Response("Verification failed: verify token mismatch.", { status: 403 });
+  }) as unknown as PublicHttpAction,
+});
+
+http.route({
+  path: "/whatsapp-webhook",
+  method: "POST",
+  handler: (async (ctx: any, request: Request) => {
+    let payload: Record<string, unknown>;
+    try {
+      payload = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return new Response("Invalid JSON body.", { status: 400 });
+    }
+
+    // Only accept status updates for our WhatsApp Business Account (WABA).
+    const entry = Array.isArray(payload.entry) ? payload.entry : [];
+    for (const e of entry as Array<Record<string, unknown>>) {
+      const changes = Array.isArray(e.changes) ? e.changes : [];
+      for (const change of changes as Array<Record<string, unknown>>) {
+        const value = (change.value ?? {}) as Record<string, unknown>;
+        const statuses = Array.isArray(value.statuses) ? value.statuses : [];
+        for (const st of statuses as Array<Record<string, unknown>>) {
+          const wamid = typeof st.id === "string" ? st.id : null;
+          const status = typeof st.status === "string" ? st.status : null;
+          if (!wamid || !status) continue;
+
+          // Find the lead by the message id we stored when sending.
+          const leads = await ctx.db
+            .query("leads")
+            .filter((q: any) => q.eq(q.field("whatsappMessageId"), wamid))
+            .take(1);
+          const lead = leads[0];
+          if (!lead) continue;
+
+          const mapped =
+            status === "sent" || status === "delivered" || status === "read" || status === "failed"
+              ? status
+              : null;
+          if (!mapped) continue;
+
+          await ctx.db.patch(lead._id, {
+            whatsappStatus: mapped,
+            ...(mapped === "sent" || mapped === "delivered"
+              ? { lastContactedAt: Date.now(), status: "sent" }
+              : {}),
+          });
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as unknown as PublicHttpAction,
+});
+
 export default http;

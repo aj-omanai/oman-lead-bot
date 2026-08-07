@@ -297,6 +297,52 @@ export const updateNotes = mutation({
   },
 });
 
+export const setEmailVerified = mutation({
+  args: {
+    id: v.id("leads"),
+    emailVerified: v.optional(v.string()),
+    emailVerifiedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, {
+      emailVerified: args.emailVerified || undefined,
+      emailVerifiedAt: args.emailVerifiedAt ?? Date.now(),
+    });
+  },
+});
+
+export const setWhatsappResult = mutation({
+  args: {
+    id: v.id("leads"),
+    whatsappStatus: v.optional(
+      v.union(
+        v.literal("sent"),
+        v.literal("delivered"),
+        v.literal("read"),
+        v.literal("failed"),
+      ),
+    ),
+    whatsappMessageId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
+    await ctx.db.patch(args.id, {
+      whatsappStatus: args.whatsappStatus ?? undefined,
+      whatsappMessageId: args.whatsappMessageId ?? undefined,
+      ...(args.whatsappStatus === "sent" || args.whatsappStatus === "delivered"
+        ? { lastContactedAt: Date.now(), status: "sent" as const }
+        : {}),
+    });
+  },
+});
+
 /**
  * Import leads from the user's local pipeline (e.g. leads.csv). Dedupes by
  * (name, phone) per user, mirroring storage.save_leads in the Python toolkit.

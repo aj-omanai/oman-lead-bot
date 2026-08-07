@@ -25,6 +25,7 @@ import {
   Languages,
   Loader2,
   Mail,
+  MessageCircle,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -344,6 +345,75 @@ export function Settings() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <EnvVarChip name="VLY_INTEGRATION_KEY" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 rounded-xl border border-border/70 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                <MessageCircle className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">{t("WhatsApp Cloud API", "واتساب للأعمال")}</p>
+                  {status?.whatsappConfigured ? (
+                    <Badge variant="outline" className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700">
+                      <CheckCircle2 className="me-1 size-3" />
+                      {t("Ready", "جاهز")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700">
+                      <Circle className="me-1 size-3" />
+                      {t("Missing keys", "المفاتيح مفقودة")}
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t(
+                    "Powers the WhatsApp Outreach tab via the official Graph API — ToS-compliant and trackable. Point the Meta webhook at",
+                    "يشغّل تبويب التواصل عبر واتساب عبر واجهة Graph الرسمية — متوافقة مع الشروط وقابلة للتتبع. وجّه ويب هوك Meta إلى",
+                  )}{" "}
+                  <span className="font-mono text-foreground">{"<site-url>/whatsapp-webhook"}</span>
+                  {t(
+                    " with WHATSAPP_VERIFY_TOKEN to receive delivery receipts.",
+                    " مع WHATSAPP_VERIFY_TOKEN لاستقبال إشعارات التسليم.",
+                  )}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <EnvVarChip name="WHATSAPP_TOKEN" />
+                  <EnvVarChip name="WHATSAPP_PHONE_NUMBER_ID" />
+                  <EnvVarChip name="WHATSAPP_VERIFY_TOKEN" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 rounded-xl border border-border/70 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium">{t("Email verification", "التحقق من البريد")}</p>
+                  {status?.zerobounceConfigured ? (
+                    <Badge variant="outline" className="rounded-full border-emerald-500/25 bg-emerald-500/10 text-emerald-700">
+                      <CheckCircle2 className="me-1 size-3" />
+                      {t("Ready", "جاهز")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full border-amber-500/25 bg-amber-500/10 text-amber-700">
+                      <Circle className="me-1 size-3" />
+                      {t("Missing key", "المفتاح مفقود")}
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t(
+                    "Validates scraped emails with ZeroBounce before you send, so outreach doesn't bounce and sender reputation stays clean. Free tier: 100 validations/month. The Verify button lives in the Email Outreach tab.",
+                    "يتحقق من البريد المُكشوط عبر ZeroBounce قبل الإرسال، فلا ترتد رسائلك وتبقى سمعة المرسل نظيفة. الخطة المجانية: 100 تحقق شهرياً. زر التحقق موجود في تبويب التواصل عبر البريد.",
+                  )}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <EnvVarChip name="ZEROBOUNCE_API_KEY" />
                 </div>
               </div>
             </div>
