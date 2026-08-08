@@ -43,7 +43,7 @@ function buildEmailPrompt(lead: LeadInfo): string {
   );
 }
 
-function parseEmailDraft(text: string): { subject: string; body: string } {
+export function parseEmailDraft(text: string): { subject: string; body: string } {
   const subjectMatch = text.match(/SUBJECT:\s*(.+)/i);
   const bodyMatch = text.match(/BODY:\s*([\s\S]+)/i);
   const subject = (subjectMatch?.[1] ?? "").trim().replace(/^["']|["']$/g, "").slice(0, 200);
@@ -168,10 +168,16 @@ type SendResult =
       message: string;
     };
 
-/** Send the drafted email via the vly email integration, metered as one email. */
+/** Send the drafted email via the vly email integration, metered as one email.
+ *  Optional `subject` / `body` overrides let a follow-up send its own drafted
+ *  text instead of the lead's stored email draft. */
 export const sendEmail = action({
-  args: { leadId: v.id("leads") },
-  handler: async (ctx, { leadId }): Promise<SendResult> => {
+  args: {
+    leadId: v.id("leads"),
+    subject: v.optional(v.string()),
+    body: v.optional(v.string()),
+  },
+  handler: async (ctx, { leadId, subject: subjectOverride, body: bodyOverride }): Promise<SendResult> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       return { ok: false as const, reason: "no-auth" as const, message: "Sign in to send emails." };
@@ -196,7 +202,11 @@ export const sendEmail = action({
         message: "Add an email address to this lead first (in the Leads or Email Outreach tab).",
       };
     }
-    if (!lead.emailSubject || !lead.emailBody) {
+
+    // Effective content: follow-up override wins, otherwise the stored draft.
+    const emailSubject = (subjectOverride ?? lead.emailSubject ?? "").trim();
+    const emailBody = (bodyOverride ?? lead.emailBody ?? "").trim();
+    if (!emailSubject || !emailBody) {
       return {
         ok: false as const,
         reason: "no-draft" as const,
@@ -223,7 +233,6 @@ export const sendEmail = action({
       };
     }
 
-    const emailBody = lead.emailBody;
     const safeHtml = emailBody
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -232,7 +241,7 @@ export const sendEmail = action({
 
     const result = await vly.email.send({
       to: lead.email,
-      subject: lead.emailSubject,
+      subject: emailSubject,
       text: emailBody,
       html: `<div dir="rtl" lang="ar" style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.9;color:#1f2937;">${safeHtml}</div>`,
     });
@@ -254,7 +263,11 @@ export const sendEmail = action({
     }
 
     await ctx.runMutation(api.billing.recordUsage, { counter: "emails" });
-    await ctx.runMutation(api.leads.setStatus, { id: leadId, status: "sent" });
+    await ctx.runMutation(api.leads.setStatus, {
+      id: leadId,
+      status: "sent",
+      channel: "email",
+    });
 
     return { ok: true as const, status: status === "sent" ? "sent" : "queued" };
   },

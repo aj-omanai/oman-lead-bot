@@ -1,6 +1,7 @@
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Billing } from "@/components/dashboard/Billing";
 import { EmailOutreach } from "@/components/dashboard/EmailOutreach";
+import { FollowUps } from "@/components/dashboard/FollowUps";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
 import { WhatsAppOutreach } from "@/components/dashboard/WhatsAppOutreach";
 import { Overview } from "@/components/dashboard/Overview";
@@ -24,6 +25,7 @@ import {
   LogOut,
   Mail,
   MessageCircle,
+  Repeat,
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
@@ -37,6 +39,7 @@ export type TabId =
   | "leads"
   | "email"
   | "whatsapp"
+  | "followups"
   | "billing"
   | "settings";
 
@@ -47,6 +50,7 @@ const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users
   { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
   { id: "email", label: "Email Outreach", labelAr: "التواصل بالبريد", icon: Mail },
   { id: "whatsapp", label: "WhatsApp Outreach", labelAr: "التواصل بواتساب", icon: MessageCircle },
+  { id: "followups", label: "Follow-ups", labelAr: "المتابعات", icon: Repeat },
   { id: "billing", label: "Billing", labelAr: "الفوترة", icon: CreditCard },
   { id: "settings", label: "Settings", labelAr: "الإعدادات", icon: SettingsIcon },
 ];
@@ -63,6 +67,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabId>("overview");
   const leads = useQuery(api.leads.list);
+  const pendingFollowUps = useQuery(api.followUpStore.pendingCount);
 
   const handleSignOut = async () => {
     try {
@@ -108,6 +113,11 @@ export default function Dashboard() {
                   )}
                 />
                 {isRtl ? item.labelAr : item.label}
+                {item.id === "followups" && (pendingFollowUps ?? 0) > 0 && (
+                  <span className="ms-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold leading-4 text-primary">
+                    {pendingFollowUps}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -176,6 +186,11 @@ export default function Dashboard() {
                 >
                   <item.icon className="size-3.5" />
                   {isRtl ? item.labelAr : item.label}
+                  {item.id === "followups" && (pendingFollowUps ?? 0) > 0 && (
+                    <span className="ms-1 rounded-full bg-background/20 px-1.5 py-0.5 text-[10px] font-semibold leading-4 text-primary-foreground">
+                      {pendingFollowUps}
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -194,6 +209,7 @@ export default function Dashboard() {
             {tab === "leads" && <LeadsWorkspace />}
             {tab === "email" && <EmailOutreach onNavigate={setTab} />}
             {tab === "whatsapp" && <WhatsAppOutreach onNavigate={setTab} />}
+            {tab === "followups" && <FollowUps onNavigate={setTab} />}
             {tab === "billing" && <Billing />}
             {tab === "settings" && <Settings />}
           </motion.main>

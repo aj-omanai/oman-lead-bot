@@ -7,6 +7,10 @@ import { api } from "./_generated/api";
  * Daily at 04:30 UTC the yellowpages.om scraper refreshes the shared
  * discovery pool (scrapeResults). Users pull rows into their own workspace
  * from the Leads tab → Discovery pool dialog.
+ *
+ * At 05:00 UTC the follow-up job drafts a polite follow-up for every lead
+ * that was pitched 3+ days ago with no reply. Drafts only queue for human
+ * review — nothing sends automatically (see followUps.ts).
  */
 const crons = cronJobs();
 
@@ -17,6 +21,16 @@ crons.daily(
     minuteUTC: 30,
   },
   api.scraping.scrapeYellowpages,
+  {},
+);
+
+crons.daily(
+  "draft-followups-daily",
+  {
+    hourUTC: 5,
+    minuteUTC: 0,
+  },
+  api.followUps.draftFollowUps,
   {},
 );
 

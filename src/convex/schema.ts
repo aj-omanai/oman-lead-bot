@@ -57,6 +57,9 @@ const schema = defineSchema(
       emailBody: v.optional(v.string()),
       optedOut: v.optional(v.boolean()),
       lastContactedAt: v.optional(v.number()),
+      lastContactChannel: v.optional(
+        v.union(v.literal("whatsapp"), v.literal("email")),
+      ),
       notes: v.optional(v.string()),
       // WhatsApp Cloud API delivery tracking (updated via webhook).
       whatsappStatus: v.optional(
@@ -101,6 +104,26 @@ const schema = defineSchema(
       emails: v.number(),
       whatsapp: v.number(),
     }).index("by_user_month", ["userId", "month"]),
+
+    // AI-drafted follow-ups — created by the daily cron for sent leads with no
+    // reply after 3 days, reviewed by the user in the Follow-ups tab. The
+    // by_lead index is how the at-most-one-per-lead cap is enforced (any row,
+    // pending/sent/skipped, blocks a second follow-up).
+    followUps: defineTable({
+      leadId: v.id("leads"),
+      userId: v.id("users"), // denormalized for the tab's per-user query
+      channel: v.union(v.literal("whatsapp"), v.literal("email")),
+      draftSubject: v.optional(v.string()), // email only
+      draftBody: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("sent"),
+        v.literal("skipped"),
+      ),
+      sentAt: v.optional(v.number()),
+    })
+      .index("by_user_status", ["userId", "status"])
+      .index("by_lead", ["leadId"]),
 
     // Shared server-side discovery pool — refreshed by a daily Convex cron
     // (crons.ts) that scrapes yellowpages.om. Users import rows into their own

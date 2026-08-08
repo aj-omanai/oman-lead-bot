@@ -81,7 +81,7 @@ export async function getEffectivePlan(
   return "free";
 }
 
-async function usageForUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
+export async function usageForUser(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
   return ctx.db
     .query("usage")
     .withIndex("by_user_month", (q) =>
@@ -118,6 +118,45 @@ export const snapshotUsage = query({
   },
 });
 
+/**
+ * Increment a usage counter for an arbitrary user (server-side callers such as
+ * the follow-up cron). Creates the per-month row lazily. This is the single
+ * source of truth for how usage rows are written — the client-facing
+ * `recordUsage` mutation delegates here too.
+ */
+export async function bumpUsage(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  counter: UsageCounter,
+  delta = 1,
+): Promise<void> {
+  const month = monthKey();
+  const existing = await ctx.db
+    .query("usage")
+    .withIndex("by_user_month", (q) =>
+      q.eq("userId", userId).eq("month", month),
+    )
+    .first();
+  const bump = {
+    aiDrafts: counter === "aiDrafts" ? delta : 0,
+    emails: counter === "emails" ? delta : 0,
+    whatsapp: counter === "whatsapp" ? delta : 0,
+  };
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      aiDrafts: existing.aiDrafts + bump.aiDrafts,
+      emails: existing.emails + bump.emails,
+      whatsapp: existing.whatsapp + bump.whatsapp,
+    });
+  } else {
+    await ctx.db.insert("usage", {
+      userId,
+      month,
+      ...bump,
+    });
+  }
+}
+
 /** Increment a per-user, per-month usage counter (creates the row lazily). */
 export const recordUsage = mutation({
   args: {
@@ -131,32 +170,7 @@ export const recordUsage = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
-    const delta = args.amount ?? 1;
-    const month = monthKey();
-    const existing = await ctx.db
-      .query("usage")
-      .withIndex("by_user_month", (q) =>
-        q.eq("userId", userId).eq("month", month),
-      )
-      .first();
-    const bump = {
-      aiDrafts: args.counter === "aiDrafts" ? delta : 0,
-      emails: args.counter === "emails" ? delta : 0,
-      whatsapp: args.counter === "whatsapp" ? delta : 0,
-    };
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        aiDrafts: existing.aiDrafts + bump.aiDrafts,
-        emails: existing.emails + bump.emails,
-        whatsapp: existing.whatsapp + bump.whatsapp,
-      });
-    } else {
-      await ctx.db.insert("usage", {
-        userId,
-        month,
-        ...bump,
-      });
-    }
+    await bumpUsage(ctx, userId, args.counter, args.amount ?? 1);
     return { ok: true };
   },
 });

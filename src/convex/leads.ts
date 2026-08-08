@@ -199,14 +199,25 @@ export const seed = mutation({
 });
 
 export const setStatus = mutation({
-  args: { id: v.id("leads"), status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")) },
+  args: {
+    id: v.id("leads"),
+    status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
+    // Channel that was used to contact the lead (whatsapp / email) — recorded
+    // so the follow-up cron knows which channel to reuse.
+    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("email"))),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return;
+    const lead = await ctx.db.get(args.id);
+    if (!lead || lead.userId !== userId) return;
     // Record when the lead was last contacted whenever it moves to "sent".
     await ctx.db.patch(args.id, {
       status: args.status,
       ...(args.status === "sent" ? { lastContactedAt: Date.now() } : {}),
+      ...(args.status === "sent" && args.channel
+        ? { lastContactChannel: args.channel }
+        : {}),
     });
   },
 });
@@ -337,7 +348,11 @@ export const setWhatsappResult = mutation({
       whatsappStatus: args.whatsappStatus ?? undefined,
       whatsappMessageId: args.whatsappMessageId ?? undefined,
       ...(args.whatsappStatus === "sent" || args.whatsappStatus === "delivered"
-        ? { lastContactedAt: Date.now(), status: "sent" as const }
+        ? {
+            lastContactedAt: Date.now(),
+            lastContactChannel: "whatsapp" as const,
+            status: "sent" as const,
+          }
         : {}),
     });
   },
