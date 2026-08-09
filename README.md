@@ -173,3 +173,11 @@ src/convex/
   crons.ts         # scheduled jobs (follow-ups, scraper)
 src/components/dashboard/  # one file per dashboard tab
 ```
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © Oman Lead Bot contributors. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for how to get involved.
+
