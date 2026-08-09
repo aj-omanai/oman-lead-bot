@@ -1,3 +1,15 @@
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCorners,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,50 +57,44 @@ type Stage = (typeof STAGES)[number];
 
 const STAGE_META: Record<
   Stage,
-  { label: string; labelAr: string; headerClass: string; dot: string; bar: string }
+  { label: string; labelAr: string; headerClass: string; dot: string }
 > = {
   new: {
     label: "New",
     labelAr: "جديد",
     headerClass: "border-border bg-muted/60",
     dot: "bg-muted-foreground",
-    bar: "bg-muted-foreground/60",
   },
   qualified: {
     label: "Qualified",
     labelAr: "مؤهل",
     headerClass: "border-sky-500/25 bg-sky-500/10",
     dot: "bg-sky-500",
-    bar: "bg-sky-500",
   },
   negotiating: {
     label: "Negotiating",
     labelAr: "تفاوض",
     headerClass: "border-amber-500/25 bg-amber-500/10",
     dot: "bg-amber-500",
-    bar: "bg-amber-500",
   },
   won: {
     label: "Won",
     labelAr: "فاز",
     headerClass: "border-emerald-500/25 bg-emerald-500/10",
     dot: "bg-emerald-500",
-    bar: "bg-emerald-500",
   },
   lost: {
     label: "Lost",
     labelAr: "خسر",
     headerClass: "border-rose-500/25 bg-rose-500/10",
     dot: "bg-rose-500",
-    bar: "bg-rose-500",
   },
 };
 
 /** Same thresholds as scoring.scoreBand (kept local — display concern only). */
 function scoreTone(score?: number): { className: string } {
   if (score === undefined) return { className: "bg-muted text-muted-foreground" };
-  if (score >= 70)
-    return { className: "bg-emerald-500/15 text-emerald-700" };
+  if (score >= 70) return { className: "bg-emerald-500/15 text-emerald-700" };
   if (score >= 40) return { className: "bg-amber-500/15 text-amber-700" };
   return { className: "bg-muted text-muted-foreground" };
 }
@@ -174,6 +180,263 @@ function DealValueEditor({
   );
 }
 
+/** The card's inner content — shared by the in-place card and the drag overlay. */
+function CardBody({
+  lead,
+  stage,
+  editingId,
+  draft,
+  onStart,
+  onDraft,
+  onSave,
+  onCancel,
+  onMove,
+  compact,
+}: {
+  lead: Lead;
+  stage: Stage;
+  editingId: Id<"leads"> | null;
+  draft: string;
+  onStart: (lead: Lead) => void;
+  onDraft: (value: string) => void;
+  onSave: (lead: Lead) => void;
+  onCancel: () => void;
+  onMove: (lead: Lead, stage: Stage) => void;
+  /** Overlay mode — read-only, no controls (they'd be dead in the portal). */
+  compact?: boolean;
+}) {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const idx = STAGES.indexOf(stage);
+  const prev = idx > 0 ? STAGES[idx - 1] : undefined;
+  const next = idx < STAGES.length - 1 ? STAGES[idx + 1] : undefined;
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium leading-5">{lead.name}</p>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold",
+            scoreTone(lead.score).className,
+          )}
+          title={(lead.scoreReasons ?? []).join(" · ") || undefined}
+        >
+          {lead.score ?? "—"}
+        </span>
+      </div>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        {lead.city}
+        {lead.category ? ` · ${lead.category}` : ""}
+      </p>
+
+      {compact ? (
+        lead.dealValue ? (
+          <p className="mt-2 font-mono text-xs font-semibold text-primary">
+            {t("ر.ع.", "OMR")} {lead.dealValue.toLocaleString()}
+          </p>
+        ) : null
+      ) : (
+        <>
+          <div className="mt-2">
+            <DealValueEditor
+              lead={lead}
+              editingId={editingId}
+              draft={draft}
+              onStart={onStart}
+              onDraft={onDraft}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          </div>
+
+          <div className="mt-2 flex items-center gap-1 border-t border-border/60 pt-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!prev}
+              onClick={() => prev && onMove(lead, prev)}
+              aria-label={t("Move back", "تحريك للخلف")}
+            >
+              <ChevronLeft className="size-4 rtl:-scale-x-100" />
+            </Button>
+            <Select
+              value={stage}
+              onValueChange={(value) => onMove(lead, value as Stage)}
+            >
+              <SelectTrigger
+                className="h-7 flex-1 text-xs"
+                aria-label={t("Move to stage", "نقل إلى مرحلة")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STAGES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {isRtl ? STAGE_META[s].labelAr : STAGE_META[s].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!next}
+              onClick={() => next && onMove(lead, next)}
+              aria-label={t("Move forward", "تحريك للأمام")}
+            >
+              <ChevronRight className="size-4 rtl:-scale-x-100" />
+            </Button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/** A card that can be dragged between columns. */
+function DraggableCard({
+  lead,
+  stage,
+  editingId,
+  draft,
+  onStart,
+  onDraft,
+  onSave,
+  onCancel,
+  onMove,
+}: {
+  lead: Lead;
+  stage: Stage;
+  editingId: Id<"leads"> | null;
+  draft: string;
+  onStart: (lead: Lead) => void;
+  onDraft: (value: string) => void;
+  onSave: (lead: Lead) => void;
+  onCancel: () => void;
+  onMove: (lead: Lead, stage: Stage) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: lead._id,
+    data: { stage },
+  });
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={cn(
+        "cursor-grab touch-none rounded-xl border border-border/80 bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing",
+        isDragging && "opacity-40",
+      )}
+    >
+      <CardBody
+        lead={lead}
+        stage={stage}
+        editingId={editingId}
+        draft={draft}
+        onStart={onStart}
+        onDraft={onDraft}
+        onSave={onSave}
+        onCancel={onCancel}
+        onMove={onMove}
+      />
+    </motion.div>
+  );
+}
+
+/** A stage column that accepts dropped cards. */
+function DroppableColumn({
+  stage,
+  cards,
+  fmt,
+  editingId,
+  draft,
+  onStart,
+  onDraft,
+  onSave,
+  onCancel,
+  onMove,
+}: {
+  stage: Stage;
+  cards: Lead[];
+  fmt: (n: number) => string;
+  editingId: Id<"leads"> | null;
+  draft: string;
+  onStart: (lead: Lead) => void;
+  onDraft: (value: string) => void;
+  onSave: (lead: Lead) => void;
+  onCancel: () => void;
+  onMove: (lead: Lead, stage: Stage) => void;
+}) {
+  const { isRtl } = useRtl();
+  const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const meta = STAGE_META[stage];
+  const total = cards.reduce((sum, lead) => sum + (lead.dealValue ?? 0), 0);
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex w-72 shrink-0 flex-col rounded-xl border bg-muted/30 transition-colors",
+        isOver
+          ? "border-primary/50 bg-primary/5 ring-2 ring-primary/30"
+          : "border-border/70",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center justify-between gap-2 rounded-t-xl border-b px-3 py-2.5",
+          meta.headerClass,
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <span className={cn("size-2 rounded-full", meta.dot)} />
+          <span className="text-sm font-semibold">
+            {isRtl ? meta.labelAr : meta.label}
+          </span>
+          <span className="rounded-full bg-background/70 px-1.5 text-xs font-medium text-muted-foreground">
+            {cards.length}
+          </span>
+        </div>
+        {total > 0 && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {fmt(total)}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2 p-2.5">
+        {cards.length === 0 ? (
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+            {t("No leads here", "لا عملاء هنا")}
+          </p>
+        ) : (
+          cards.map((lead) => (
+            <DraggableCard
+              key={lead._id}
+              lead={lead}
+              stage={stage}
+              editingId={editingId}
+              draft={draft}
+              onStart={onStart}
+              onDraft={onDraft}
+              onSave={onSave}
+              onCancel={onCancel}
+              onMove={onMove}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
   const { isRtl } = useRtl();
   const t = (en: string, ar: string) => (isRtl ? ar : en);
@@ -185,6 +448,11 @@ export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<Id<"leads"> | null>(null);
   const [draft, setDraft] = useState("");
+  const [activeLead, setActiveLead] = useState<Lead | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   const currency = isRtl ? "ر.ع." : "OMR";
   const fmt = (n: number) => `${n.toLocaleString()} ${currency}`;
@@ -211,9 +479,6 @@ export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
     return map;
   }, [leads, query]);
 
-  const stageTotal = (stage: Stage) =>
-    byStage[stage].reduce((sum, lead) => sum + (lead.dealValue ?? 0), 0);
-
   const moveTo = (lead: Lead, stage: Stage) => {
     void setStage({ id: lead._id, stage });
   };
@@ -239,6 +504,21 @@ export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
       toast.error(
         error instanceof Error ? error.message : t("Could not save value.", "تعذر حفظ القيمة."),
       );
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveLead((leads ?? []).find((l) => l._id === event.active.id) ?? null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveLead(null);
+    const { active, over } = event;
+    if (!over) return;
+    const from = active.data.current?.stage as Stage | undefined;
+    const to = over.id as Stage;
+    if (from && to && from !== to) {
+      void setStage({ id: active.id as Id<"leads">, stage: to });
     }
   };
 
@@ -279,8 +559,8 @@ export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
             {t(
-              "Track deals through the funnel — qualify leads, set a deal value, and move them to won or lost. Scores and deal values are yours to edit at any time.",
-              "تابع الصفقات عبر مسار البيع — أهّل العملاء، حدد قيمة الصفقة، وانقلها إلى فاز أو خسر. يمكنك تعديل الدرجات وقيم الصفقات في أي وقت.",
+              "Track deals through the funnel — drag a card between columns to change its stage, or use the arrows and dropdown. Set a deal value to qualify a new lead.",
+              "تابع الصفقات عبر مسار البيع — اسحب بطاقة بين الأعمدة لتغيير مرحلتها، أو استخدم الأسهم والقائمة. حدد قيمة صفقة لتأهيل عميل جديد.",
             )}
           </p>
         </div>
@@ -356,136 +636,57 @@ export function Pipeline({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {STAGES.map((stage) => {
-            const meta = STAGE_META[stage];
-            const cards = byStage[stage];
-            const total = stageTotal(stage);
-            return (
-              <div
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveLead(null)}
+        >
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {STAGES.map((stage) => (
+              <DroppableColumn
                 key={stage}
-                className="flex w-72 shrink-0 flex-col rounded-xl border border-border/70 bg-muted/30"
-              >
-                <div
-                  className={cn(
-                    "flex items-center justify-between gap-2 rounded-t-xl border-b px-3 py-2.5",
-                    meta.headerClass,
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={cn("size-2 rounded-full", meta.dot)} />
-                    <span className="text-sm font-semibold">
-                      {isRtl ? meta.labelAr : meta.label}
-                    </span>
-                    <span className="rounded-full bg-background/70 px-1.5 text-xs font-medium text-muted-foreground">
-                      {cards.length}
-                    </span>
-                  </div>
-                  {total > 0 && (
-                    <span className="font-mono text-[11px] text-muted-foreground">
-                      {fmt(total)}
-                    </span>
-                  )}
-                </div>
+                stage={stage}
+                cards={byStage[stage]}
+                fmt={fmt}
+                editingId={editingId}
+                draft={draft}
+                onStart={startEdit}
+                onDraft={setDraft}
+                onSave={(lead) => void saveValue(lead)}
+                onCancel={() => setEditingId(null)}
+                onMove={moveTo}
+              />
+            ))}
+          </div>
 
-                <div className="flex flex-col gap-2 p-2.5">
-                  {cards.length === 0 ? (
-                    <p className="px-2 py-6 text-center text-xs text-muted-foreground">
-                      {t("No leads here", "لا عملاء هنا")}
-                    </p>
-                  ) : (
-                    cards.map((lead, i) => {
-                      const idx = STAGES.indexOf(stage);
-                      const prev = idx > 0 ? STAGES[idx - 1] : undefined;
-                      const next = idx < STAGES.length - 1 ? STAGES[idx + 1] : undefined;
-                      return (
-                        <motion.div
-                          key={lead._id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.2) }}
-                          className="rounded-xl border border-border/80 bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium leading-5">{lead.name}</p>
-                            <span
-                              className={cn(
-                                "shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold",
-                                scoreTone(lead.score).className,
-                              )}
-                              title={(lead.scoreReasons ?? []).join(" · ") || undefined}
-                            >
-                              {lead.score ?? "—"}
-                            </span>
-                          </div>
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            {lead.city}
-                            {lead.category ? ` · ${lead.category}` : ""}
-                          </p>
-
-                          <div className="mt-2">
-                            <DealValueEditor
-                              lead={lead}
-                              editingId={editingId}
-                              draft={draft}
-                              onStart={startEdit}
-                              onDraft={setDraft}
-                              onSave={(l) => void saveValue(l)}
-                              onCancel={() => setEditingId(null)}
-                            />
-                          </div>
-
-                          <div className="mt-2 flex items-center gap-1 border-t border-border/60 pt-2">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={!prev}
-                              onClick={() => prev && moveTo(lead, prev)}
-                              aria-label={t("Move back", "تحريك للخلف")}
-                            >
-                              <ChevronLeft className="size-4 rtl:-scale-x-100" />
-                            </Button>
-                            <Select
-                              value={stage}
-                              onValueChange={(value) => moveTo(lead, value as Stage)}
-                            >
-                              <SelectTrigger className="h-7 flex-1 text-xs" aria-label={t("Move to stage", "نقل إلى مرحلة")}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STAGES.map((s) => (
-                                  <SelectItem key={s} value={s}>
-                                    {isRtl ? STAGE_META[s].labelAr : STAGE_META[s].label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={!next}
-                              onClick={() => next && moveTo(lead, next)}
-                              aria-label={t("Move forward", "تحريك للأمام")}
-                            >
-                              <ChevronRight className="size-4 rtl:-scale-x-100" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      );
-                    })
-                  )}
-                </div>
+          <DragOverlay>
+            {activeLead ? (
+              <div className="w-[16.75rem] rounded-xl border border-border bg-card p-3 shadow-2xl ring-1 ring-primary/20">
+                <CardBody
+                  lead={activeLead}
+                  stage={activeLead.stage ?? "new"}
+                  editingId={null}
+                  draft=""
+                  onStart={() => undefined}
+                  onDraft={() => undefined}
+                  onSave={() => undefined}
+                  onCancel={() => undefined}
+                  onMove={() => undefined}
+                  compact
+                />
               </div>
-            );
-          })}
-        </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Gauge className="size-3.5 text-primary" />
         {t(
-          "Setting a deal value on a new lead auto-qualifies it. Stage changes and scores are recorded live.",
-          "تحديد قيمة صفقة لعميل جديد يؤهله تلقائياً. تُسجَّل تغييرات المراحل والدرجات مباشرة.",
+          "Drag a card onto another column to move it. Setting a deal value on a new lead auto-qualifies it; stage changes are recorded live.",
+          "اسحب بطاقة إلى عمود آخر لنقلها. تحديد قيمة صفقة لعميل جديد يؤهله تلقائياً؛ وتُسجَّل تغييرات المراحل مباشرة.",
         )}
       </p>
     </div>
