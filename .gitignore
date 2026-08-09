@@ -1,4 +1,8 @@
 .env.local
 node_modules
 dist
-src/convex/_generated
+
+# Convex generates these locally on every deploy, but they are committed to the
+# repo so GitHub CI (tsc + vitest) can run on a fresh clone without a Convex
+# deployment — the standard pattern recommended by Convex docs.
+# src/convex/_generated

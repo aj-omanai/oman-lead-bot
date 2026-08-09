@@ -1,272 +1,175 @@
-## Overview
+# Oman Lead Bot 🇴🇲
 
-This project uses the following tech stack:
-- Vite
-- Typescript
-- React Router v7 (all imports from `react-router` instead of `react-router-dom`)
-- React 19 (for frontend components)
-- Tailwind v4 (for styling)
-- Shadcn UI (for UI components library)
-- Lucide Icons (for icons)
-- Convex (for backend & database)
-- Convex Auth (for authentication)
-- Framer Motion (for animations)
-- Three js (for 3d models)
+Zero-cost, AI-powered **B2B lead generation for Oman and GCC businesses**. The app
+finds and scores real leads, drafts personalized Gulf Arabic pitches with a free
+LLM, sends them over WhatsApp and email, and follows up automatically — with a
+human approving every send.
 
-All relevant files live in the 'src' directory.
+Built with **Vite + React 19 + TypeScript**, **Tailwind v4 + shadcn/ui**,
+**Convex** (backend & database), **Convex Auth** (email OTP), and **Framer Motion**.
 
-Use bun for the package manager.
+---
 
-## Setup
+## ✨ What's inside
 
-This project is set up already and running on a cloud environment, as well as a convex development in the sandbox.
+| Tab | What it does |
+| --- | --- |
+| **Overview** | Dashboard: pipeline chart (leads by stage), usage meters, quick actions |
+| **Script Library** | The free Python toolkit for the original local scraping pipeline |
+| **Setup Guide** | Step-by-step onboarding checklist |
+| **Leads** | Your lead database: CSV import, yellowpages discovery pool, AI **scoring** (Hot / Warm / Cold with reasons), do-not-contact toggle, notes |
+| **Pipeline** | Sales kanban: `new → qualified → negotiating → won/lost`, drag-and-drop cards, inline deal values, open pipeline & weighted forecast |
+| **Email Outreach** | AI-draft subject + body, **ZeroBounce** email verification, send (Pro+), delivery tracking |
+| **WhatsApp Outreach** | Official **WhatsApp Business Cloud API** (ToS-compliant, no Selenium), live delivery statuses (sent → delivered → read / failed) |
+| **Follow-ups** | The app auto-drafts a follow-up 3 days after an unanswered send; you approve, edit, or skip |
+| **Billing** | Plan cards, monthly usage meters, Stripe Checkout upgrade, manage subscription |
+| **Settings** | Integration status for every key, free-key hints, RTL toggle |
 
-## Environment Variables
+Also included: a full **Arabic RTL mode** (mirrors the whole interface and translates the landing page), dark/light theme, and responsive mobile layouts.
 
-The project is set up with project specific CONVEX_DEPLOYMENT and VITE_CONVEX_URL environment variables on the client side.
+---
 
-The convex server has a separate set of environment variables that are accessible by the convex backend.
+## 🚀 Quick start
 
-Currently, these variables include auth-specific keys: JWKS, JWT_PRIVATE_KEY, and SITE_URL.
-
-
-# Using Authentication (Important!)
-
-You must follow these conventions when using authentication.
-
-## Auth is already set up.
-
-All convex authentication functions are already set up. The auth currently uses email OTP and anonymous users, but can support more.
-
-The email OTP configuration is defined in `src/convex/auth/emailOtp.ts`. DO NOT MODIFY THIS FILE.
-
-Also, DO NOT MODIFY THESE AUTH FILES: `src/convex/auth.config.ts` and `src/convex/auth.ts`.
-
-## Using Convex Auth on the backend
-
-On the `src/convex/users.ts` file, you can use the `getCurrentUser` function to get the current user's data.
-
-## Using Convex Auth on the frontend
-
-The `/auth` page is already set up to use auth. Navigate to `/auth` for all log in / sign up sequences.
-
-You MUST use this hook to get user data. Never do this yourself without the hook:
-```typescript
-import { useAuth } from "@/hooks/use-auth";
-
-const { isLoading, isAuthenticated, user, signIn, signOut } = useAuth();
+```bash
+bun install      # install dependencies (Bun is the package manager)
+bun run dev      # start the Vite dev server
 ```
 
-## Protected Routes
+The backend is Convex; in a local checkout run `npx convex dev` in a second
+terminal (this project's hosted deployment already manages its own dev process).
 
-The starter `/dashboard` route is protected with `RequireAuth`, which sends
-signed-out users to `/auth?returnTo=<current route>`. Extend that page for the
-product's authenticated experience, and reuse `RequireAuth` when adding another
-protected route.
+**Sign in** at `/auth` (email OTP — no password needed) and you land on the
+dashboard.
 
-## Auth Page
+---
 
-The auth page is defined in `src/pages/Auth.tsx`. Send sign-in and sign-up actions
-to `/auth`.
+## 🔑 Environment variables (the Keys / API keys tab)
 
-## Authorization
+Keys are read **server-side only** — paste them into the project's *Keys / API
+keys* settings under these exact names. The app never displays or stores them.
 
-You can perform authorization checks on the frontend and backend.
+| Variable | Needed for | Get it free at |
+| --- | --- | --- |
+| `GROQ_API_KEY` | AI drafting (priority provider) | console.groq.com/keys — no credit card |
+| `GEMINI_API_KEY` | AI drafting (fallback) | aistudio.google.com/apikey |
+| `VLY_INTEGRATION_KEY` | Sending emails | pre-configured in this project (`sk_*`) |
+| `STRIPE_SECRET_KEY` | Billing (Checkout + portal) | dashboard.stripe.com |
+| `STRIPE_WEBHOOK_SECRET` | Billing webhook sync | Stripe dashboard → webhooks |
+| `ZEROBOUNCE_API_KEY` | Email verification | zerobounce.net (100 checks/mo free) |
+| `WHATSAPP_TOKEN` | WhatsApp sending | Meta App Dashboard (system-user token) |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp sending | Meta App Dashboard → WhatsApp → API Setup |
+| `WHATSAPP_VERIFY_TOKEN` | WhatsApp webhook | any secret string you choose |
 
-On the frontend, you can use the `useAuth` hook to get the current user's data and authentication state.
+Only `GROQ_API_KEY` / `GEMINI_API_KEY` are needed for the core experience;
+everything else is a progressive add-on. The **Settings** tab shows which are
+configured and walks you through each one.
 
-You should also be protecting queries, mutations, and actions at the base level, checking for authorization securely.
+---
 
-## Adding a redirect after auth
+## 🧭 How to use it — the daily workflow
 
-The `/auth` route in `src/main.tsx` redirects to `/dashboard` by default. If the
-product's main authenticated route is different, update `redirectAfterAuth` to
-that route. A validated same-origin `returnTo` query parameter takes priority so
-users can resume the protected page they originally requested. Never leave an
-authenticated product redirecting back to the public landing page.
+1. **Add leads** — *Leads* tab → **Import CSV** (name, phone, city, category, …),
+   pull from the **Discovery Pool** (scraped yellowpages.com.om listings), or use
+   the seeded sample data.
+2. **Let the AI draft** — open a lead → **Draft with AI**. The app writes a
+   personalized Gulf Arabic pitch (Groq first, Gemini fallback) and scores the
+   lead (Hot / Warm / Cold) with human-readable reasons.
+3. **Verify emails** (recommended) — *Email Outreach* → **Verify** runs the
+   address through ZeroBounce so outreach doesn't bounce.
+4. **Send** — *Email Outreach* (Pro+) or *WhatsApp Outreach* (Pro+), then
+   approve in the review dialog. Delivery statuses update live.
+5. **Follow-ups happen automatically** — every night a cron drafts a polite
+   follow-up for any sent-but-unanswered lead older than 3 days. Approve, edit,
+   or skip it in the *Follow-ups* tab (Pro+).
+6. **Run the deal** — drag the lead through the *Pipeline* kanban, set a deal
+   value, and watch open pipeline / weighted forecast / win rate update in
+   Overview.
 
-## Complete authenticated products
+**Do-not-contact** — flip the per-lead toggle and AI drafting + sending on both
+channels is blocked server-side.
 
-When the requested product implies accounts, a workspace, a dashboard, or other
-signed-in functionality, the task is not complete with only a landing page and
-auth form. Build the main authenticated experience, protect its route, and verify
-that signing in reaches it.
+---
 
-# Frontend Conventions
+## 💳 Plans & quotas
 
-You will be using the Vite frontend with React 19, Tailwind v4, and Shadcn UI.
+Quotas are enforced **server-side before every paid LLM / email / WhatsApp
+call**. Usage resets monthly.
 
-Generally, pages should be in the `src/pages` folder, and components should be in the `src/components` folder.
+| | Free | Pro ($19/mo) | Business ($49/mo) |
+| --- | --- | --- | --- |
+| AI drafts / mo | 20 | 300 | 1,500 |
+| Emails / mo | 0 | 200 | 1,000 |
+| WhatsApp msgs / mo | 0 | 200 | 1,000 |
+| Scrape sources | 1 | 5 | 20 |
+| Seats | 1 | 1 | 5 |
+| Pipeline, scoring, follow-ups | ✅ | ✅ | ✅ |
 
-Shadcn primitives are located in the `src/components/ui` folder and should be used by default.
+Upgrade in **Billing** — Stripe Checkout uses inline `price_data`, so nothing
+needs to be pre-created in the Stripe dashboard.
 
-## Page routing
+### Webhooks (one-time setup)
 
-Your page component should go under the `src/pages` folder.
+- **Stripe** — add an endpoint in Stripe for `<site-url>/stripe-webhook`,
+  subscribe to `checkout.session.completed`,
+  `customer.subscription.created/updated/deleted`, and paste
+  `STRIPE_WEBHOOK_SECRET`. Without it, upgrades won't activate automatically.
+- **WhatsApp** — in the Meta App Dashboard, point the webhook at
+  `<site-url>/whatsapp-webhook`, verification token
+  `WHATSAPP_VERIFY_TOKEN`, subscribe to **messages**. This powers live delivery
+  receipts and the verify handshake.
 
-When adding a page, update the react router configuration in `src/main.tsx` to include the new route you just added.
+---
 
-## Shad CN conventions
+## 🧪 Testing & CI
 
-Follow these conventions when using Shad CN components, which you should use by default.
-- Remember to use "cursor-pointer" to make the element clickable
-- For title text, use the "tracking-tight font-bold" class to make the text more readable
-- Always make apps MOBILE RESPONSIVE. This is important
-- AVOID NESTED CARDS. Try and not to nest cards, borders, components, etc. Nested cards add clutter and make the app look messy.
-- AVOID SHADOWS. Avoid adding any shadows to components. stick with a thin border without the shadow.
-- Avoid skeletons; instead, use the loader2 component to show a spinning loading state when loading data.
-
-
-## Landing Pages
-
-You must always create good-looking designer-level styles to your application. 
-- Make it well animated and fit a certain "theme", ie neo brutalist, retro, neumorphism, glass morphism, etc
-
-Use known images and emojis from online.
-
-If the user is logged in already, show the get started button to say "Dashboard" or "Profile" instead to take them there.
-
-## Responsiveness and formatting
-
-Make sure pages are wrapped in a container to prevent the width stretching out on wide screens. Always make sure they are centered aligned and not off-center.
-
-Always make sure that your designs are mobile responsive. Verify the formatting to ensure it has correct max and min widths as well as mobile responsiveness.
-
-- Always create sidebars for protected dashboard pages and navigate between pages
-- Always create navbars for landing pages
-- On these bars, the created logo should be clickable and redirect to the index page
-
-## Animating with Framer Motion
-
-You must add animations to components using Framer Motion. It is already installed and configured in the project.
-
-To use it, import the `motion` component from `framer-motion` and use it to wrap the component you want to animate.
-
-
-### Other Items to animate
-- Fade in and Fade Out
-- Slide in and Slide Out animations
-- Rendering animations
-- Button clicks and UI elements
-
-Animate for all components, including on landing page and app pages.
-
-## Three JS Graphics
-
-Your app comes with three js by default. You can use it to create 3D graphics for landing pages, games, etc.
-
-
-## Colors
-
-You can override colors in: `src/index.css`
-
-This uses the oklch color format for tailwind v4.
-
-Always use these color variable names.
-
-Make sure all ui components are set up to be mobile responsive and compatible with both light and dark mode.
-
-Set theme using `dark` or `light` variables at the parent className.
-
-## Styling and Theming
-
-When changing the theme, always change the underlying theme of the shad cn components app-wide under `src/components/ui` and the colors in the index.css file.
-
-Avoid hardcoding in colors unless necessary for a use case, and properly implement themes through the underlying shad cn ui components.
-
-When styling, ensure buttons and clickable items have pointer-click on them (don't by default).
-
-Always follow a set theme style and ensure it is tuned to the user's liking.
-
-## Toasts
-
-You should always use toasts to display results to the user, such as confirmations, results, errors, etc.
-
-Use the shad cn Sonner component as the toaster. For example:
-
-```
-import { toast } from "sonner"
-
-import { Button } from "@/components/ui/button"
-export function SonnerDemo() {
-  return (
-    <Button
-      variant="outline"
-      onClick={() =>
-        toast("Event has been created", {
-          description: "Sunday, December 03, 2023 at 9:00 AM",
-          action: {
-            label: "Undo",
-            onClick: () => console.log("Undo"),
-          },
-        })
-      }
-    >
-      Show Toast
-    </Button>
-  )
-}
+```bash
+bun run test        # vitest — 18 tests, no external services needed
+bun tsc -b --noEmit # typecheck
 ```
 
-Remember to import { toast } from "sonner". Usage: `toast("Event has been created.")`
+Tests live in `tests/` (outside `src/convex/`, so the Convex CLI never
+typechecks them) and cover the scoring rules, pipeline aggregation, and the
+follow-up eligibility logic (3-day window, opt-out, one-per-lead cap, plan gate).
 
-## Dialogs
+**GitHub CI** — `.github/workflows/ci.yml` runs the typecheck and the full test
+suite on every push/PR. `src/convex/_generated` is committed to the repo (the
+standard Convex pattern) so CI passes on a fresh clone without a Convex
+deployment.
 
-Always ensure your larger dialogs have a scroll in its content to ensure that its content fits the screen size. Make sure that the content is not cut off from the screen.
+---
 
-Ideally, instead of using a new page, use a Dialog instead. 
+## 🛠 Development guide
 
-# Using the Convex backend
+- **Stack**: Vite · React 19 · React Router v7 · Tailwind v4 · shadcn/ui ·
+  Convex (backend + DB) · Convex Auth · Framer Motion.
+- **Layout**: pages in `src/pages`, components in `src/components`, shadcn
+  primitives in `src/components/ui`, backend in `src/convex`.
+- **Auth**: use `useAuth()` from `@/hooks/use-auth`; protect routes with
+  `RequireAuth`. All server functions check `getAuthUserId` — never trust the
+  client.
+- **Convex rules**: `"use node"` action files can't hold queries/mutations —
+  delegate to plain companion files (e.g. `followUps.ts` → `followUpStore.ts`).
+  External HTTP lives in `src/convex/http.ts` webhooks. Schema in
+  `src/convex/schema.ts` (`schemaValidation: false`).
+- **Styling**: theme tokens in `src/index.css` (oklch), logical properties
+  (`ms-`/`me-`/`start`/`end`) so everything mirrors under RTL (`useRtl()`).
+- Do not edit `src/convex/auth.ts`, `src/convex/auth.config.ts`, or
+  `src/convex/auth/emailOtp.ts`.
 
-You will be implementing the convex backend. Follow your knowledge of convex and the documentation to implement the backend.
+## 📁 Key files
 
-## The Convex Schema
-
-You must correctly follow the convex schema implementation.
-
-The schema is defined in `src/convex/schema.ts`.
-
-Do not include the `_id` and `_creationTime` fields in your queries (it is included by default for each table).
-Do not index `_creationTime` as it is indexed for you. Never have duplicate indexes.
-
-
-## Convex Actions: Using CRUD operations
-
-When running anything that involves external connections, you must use a convex action with "use node" at the top of the file.
-
-You cannot have queries or mutations in the same file as a "use node" action file. Thus, you must use pre-built queries and mutations in other files.
-
-You can also use the pre-installed internal crud functions for the database:
-
-```ts
-// in convex/users.ts
-import { crud } from "convex-helpers/server/crud";
-import schema from "./schema.ts";
-
-export const { create, read, update, destroy } = crud(schema, "users");
-
-// in some file, in an action:
-const user = await ctx.runQuery(internal.users.read, { id: userId });
-
-await ctx.runMutation(internal.users.update, {
-  id: userId,
-  patch: {
-    status: "inactive",
-  },
-});
 ```
-
-
-## Common Convex Mistakes To Avoid
-
-When using convex, make sure:
-- Document IDs are referenced as `_id` field, not `id`.
-- Document ID types are referenced as `Id<"TableName">`, not `string`.
-- Document object types are referenced as `Doc<"TableName">`.
-- Keep schemaValidation to false in the schema file.
-- You must correctly type your code so that it passes the type checker.
-- You must handle null / undefined cases of your convex queries for both frontend and backend, or else it will throw an error that your data could be null or undefined.
-- Always use the `@/folder` path, with `@/convex/folder/file.ts` syntax for importing convex files.
-- This includes importing generated files like `@/convex/_generated/server`, `@/convex/_generated/api`
-- Remember to import functions like useQuery, useMutation, useAction, etc. from `convex/react`
-- NEVER have return type validators.
+src/convex/
+  schema.ts        # all tables: leads, usage, subscriptions, followUps, …
+  scoring.ts       # deterministic 0–100 lead scoring + bands
+  pipeline.ts      # stages, deal values, pipeline summary
+  pitch.ts         # Groq/Gemini drafting (free tier)
+  outreach.ts      # email draft/send + ZeroBounce verification
+  whatsapp.ts      # WhatsApp Business Cloud API sends
+  followUps.ts     # 3-day follow-up cron + approve/send
+  http.ts          # Stripe + WhatsApp webhooks
+  billing.ts       # plans, quotas, usage metering
+  crons.ts         # scheduled jobs (follow-ups, scraper)
+src/components/dashboard/  # one file per dashboard tab
+```
