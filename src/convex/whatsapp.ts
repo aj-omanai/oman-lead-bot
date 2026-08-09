@@ -67,7 +67,9 @@ type SendResult =
     };
 
 export const sendWhatsAppMessage = action({
-  args: { leadId: v.id("leads") },
+  // `overrideMessage` lets a caller (e.g. follow-up automation) send different
+  // text than the lead's stored pitch, without duplicating the send logic.
+  args: { leadId: v.id("leads"), overrideMessage: v.optional(v.string()) },
   handler: async (ctx, args): Promise<SendResult> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return { ok: false, reason: "no-auth", message: "Sign in to send messages." };
@@ -80,7 +82,8 @@ export const sendWhatsAppMessage = action({
     if (lead.optedOut) {
       return { ok: false, reason: "opted-out", message: "This lead is on the do-not-contact list." };
     }
-    if (!lead.pitch) {
+    const message = args.overrideMessage ?? lead.pitch;
+    if (!message) {
       return { ok: false, reason: "no-pitch", message: "Draft a pitch for this lead before sending." };
     }
 
@@ -88,7 +91,7 @@ export const sendWhatsAppMessage = action({
       const res = await fetch(`${config.url}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Service-Secret": config.secret },
-        body: JSON.stringify({ sessionId: userId, phone: lead.phone, message: lead.pitch }),
+        body: JSON.stringify({ sessionId: userId, phone: lead.phone, message }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -106,7 +109,7 @@ export const sendWhatsAppMessage = action({
       };
     }
 
-    await ctx.runMutation(internal.leads.markContacted, { id: args.leadId });
+    await ctx.runMutation(internal.leads.markContacted, { id: args.leadId, channel: "whatsapp" });
     return { ok: true };
   },
 });

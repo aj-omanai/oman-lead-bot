@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { leadStatusValidator } from "./schema";
+import { contactChannelValidator, leadStatusValidator } from "./schema";
 
 /** Real sample leads scraped from yellowpages.om (the live successor of the
  *  now-defunct yellowpages.com.om) — company names, phones and cities are real
@@ -233,11 +233,16 @@ export const importLeads = mutation({
 
 /** Internal-only: called after a successful send on any channel (email,
  *  WhatsApp). Status is channel-agnostic — it reflects "contacted," not
- *  "contacted on this specific channel." */
+ *  "contacted on this specific channel." `channel` is stamped onto the lead
+ *  so a later follow-up knows which channel to reuse. */
 export const markContacted = internalMutation({
-  args: { id: v.id("leads") },
+  args: { id: v.id("leads"), channel: contactChannelValidator },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { status: "sent", lastContactedAt: Date.now() });
+    await ctx.db.patch(args.id, {
+      status: "sent",
+      lastContactedAt: Date.now(),
+      lastContactChannel: args.channel,
+    });
   },
 });
 

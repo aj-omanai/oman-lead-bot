@@ -1,6 +1,7 @@
 import { LogoMark, Wordmark } from "@/components/brand";
 import { Billing } from "@/components/dashboard/Billing";
 import { EmailOutreach } from "@/components/dashboard/EmailOutreach";
+import { FollowUps } from "@/components/dashboard/FollowUps";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
 import { Overview } from "@/components/dashboard/Overview";
 import { RtlToggle } from "@/components/RtlToggle";
@@ -22,18 +23,28 @@ import {
   ListChecks,
   LogOut,
   Mail,
+  RefreshCw,
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-export type TabId = "overview" | "scripts" | "setup" | "leads" | "email" | "billing" | "settings";
+export type TabId =
+  | "overview"
+  | "scripts"
+  | "setup"
+  | "leads"
+  | "email"
+  | "followups"
+  | "billing"
+  | "settings";
 
 const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users }> = [
   { id: "overview", label: "Overview", labelAr: "نظرة عامة", icon: LayoutDashboard },
   { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
   { id: "email", label: "Email Outreach", labelAr: "التواصل بالبريد", icon: Mail },
+  { id: "followups", label: "Follow-ups", labelAr: "المتابعات", icon: RefreshCw },
   { id: "scripts", label: "Script Library", labelAr: "مكتبة السكربتات", icon: FileCode2 },
   { id: "setup", label: "Setup Guide", labelAr: "دليل الإعداد", icon: ListChecks },
   { id: "billing", label: "Billing", labelAr: "الفوترة", icon: CreditCard },
@@ -58,6 +69,7 @@ export default function Dashboard() {
     return requested && NAV.some((item) => item.id === requested) ? (requested as TabId) : "overview";
   });
   const leads = useQuery(api.leads.list);
+  const followUpCount = useQuery(api.followUpsData.pendingCount);
 
   const handleSignOut = async () => {
     try {
@@ -102,7 +114,12 @@ export default function Dashboard() {
                     tab === item.id ? "text-primary" : "text-muted-foreground",
                   )}
                 />
-                {isRtl ? item.labelAr : item.label}
+                <span className="flex-1 text-start">{isRtl ? item.labelAr : item.label}</span>
+                {item.id === "followups" && !!followUpCount && (
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                    {followUpCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -171,6 +188,11 @@ export default function Dashboard() {
                 >
                   <item.icon className="size-3.5" />
                   {isRtl ? item.labelAr : item.label}
+                  {item.id === "followups" && !!followUpCount && (
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary-foreground/20 text-[9px] font-semibold">
+                      {followUpCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -188,6 +210,7 @@ export default function Dashboard() {
             {tab === "setup" && <SetupGuide />}
             {tab === "leads" && <LeadsWorkspace />}
             {tab === "email" && <EmailOutreach onNavigate={setTab} />}
+            {tab === "followups" && <FollowUps onNavigate={setTab} />}
             {tab === "billing" && <Billing />}
             {tab === "settings" && <Settings />}
           </motion.main>

@@ -26,6 +26,24 @@ export const leadStatusValidator = v.union(
 );
 export type LeadStatus = Infer<typeof leadStatusValidator>;
 
+// Shared by leads.lastContactChannel and followUps.channel — the two
+// channels a pitch (or follow-up) can go out on.
+export const contactChannelValidator = v.union(
+  v.literal("whatsapp"),
+  v.literal("email"),
+);
+export type ContactChannel = Infer<typeof contactChannelValidator>;
+
+// A follow-up moves straight from "pending" to either "sent" or "skipped" —
+// "Approve & send" is one atomic action, so there's no separate
+// approved-but-not-yet-sent state to represent.
+export const followUpStatusValidator = v.union(
+  v.literal("pending"),
+  v.literal("sent"),
+  v.literal("skipped"),
+);
+export type FollowUpStatus = Infer<typeof followUpStatusValidator>;
+
 const schema = defineSchema(
   {
     // default auth tables using convex auth.
@@ -57,8 +75,23 @@ const schema = defineSchema(
       status: leadStatusValidator,
       optedOut: v.optional(v.boolean()), // do-not-contact — blocks drafting & sending on this lead
       lastContactedAt: v.optional(v.number()),
+      lastContactChannel: v.optional(contactChannelValidator), // which channel to reuse for a follow-up
       notes: v.optional(v.string()),
     }).index("by_user", ["userId"]),
+
+    // Auto-drafted follow-ups for leads that went quiet after a sent pitch.
+    // At most one row per lead, ever — enforced via by_lead before insert.
+    followUps: defineTable({
+      leadId: v.id("leads"),
+      userId: v.id("users"), // denormalized for the review tab's per-user query
+      channel: contactChannelValidator,
+      draftSubject: v.optional(v.string()), // email only
+      draftBody: v.string(),
+      status: followUpStatusValidator,
+      sentAt: v.optional(v.number()),
+    })
+      .index("by_user_status", ["userId", "status"])
+      .index("by_lead", ["leadId"]),
 
     // One row per user, tracking their current plan and Stripe billing state.
     subscriptions: defineTable({

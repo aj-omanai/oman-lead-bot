@@ -34,7 +34,9 @@ function buildEmailPrompt(lead: LeadInfo): string {
   );
 }
 
-function splitSubjectAndBody(raw: string): { subject: string; body: string } {
+/** Exported for reuse by followUps.ts, which drafts follow-up emails through
+ *  the same "Subject: ...\n<body>" convention. */
+export function splitSubjectAndBody(raw: string): { subject: string; body: string } {
   const match = raw.match(/^subject:\s*(.+)\n+([\s\S]+)$/i);
   if (match) return { subject: match[1].trim(), body: match[2].trim() };
   return { subject: "A quick idea for your team", body: raw.trim() };
@@ -174,7 +176,7 @@ export const sendEmail = action({
       };
     }
 
-    await ctx.runMutation(internal.leads.markContacted, { id: args.leadId });
+    await ctx.runMutation(internal.leads.markContacted, { id: args.leadId, channel: "email" });
     return { ok: true };
   },
 });
