@@ -75,6 +75,24 @@ const schema = defineSchema(
       emailVerified: v.optional(v.string()),
       emailVerifiedAt: v.optional(v.number()),
       status: v.union(v.literal("new"), v.literal("drafted"), v.literal("sent")),
+      // Deterministic lead score (0–100) + human-readable reasons, computed by
+      // scoring.ts from contactability, category, engagement and freshness.
+      score: v.optional(v.number()),
+      scoreReasons: v.optional(v.array(v.string())),
+      // Sales pipeline: deal stage + value. Distinct from `status` (outreach
+      // state) — stage is the commercial funnel (new → qualified → negotiating
+      // → won/lost) with an optional OMR deal value.
+      stage: v.optional(
+        v.union(
+          v.literal("new"),
+          v.literal("qualified"),
+          v.literal("negotiating"),
+          v.literal("won"),
+          v.literal("lost"),
+        ),
+      ),
+      dealValue: v.optional(v.number()),
+      stageUpdatedAt: v.optional(v.number()),
     }).index("by_user", ["userId"]),
 
     // Billing subscription — one row per user; absent rows mean "free".

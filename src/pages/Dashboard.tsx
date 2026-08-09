@@ -3,6 +3,7 @@ import { Billing } from "@/components/dashboard/Billing";
 import { EmailOutreach } from "@/components/dashboard/EmailOutreach";
 import { FollowUps } from "@/components/dashboard/FollowUps";
 import { LeadsWorkspace } from "@/components/dashboard/LeadsWorkspace";
+import { Pipeline } from "@/components/dashboard/Pipeline";
 import { WhatsAppOutreach } from "@/components/dashboard/WhatsAppOutreach";
 import { Overview } from "@/components/dashboard/Overview";
 import { RtlToggle } from "@/components/RtlToggle";
@@ -27,6 +28,7 @@ import {
   MessageCircle,
   Repeat,
   Settings as SettingsIcon,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -37,6 +39,7 @@ export type TabId =
   | "scripts"
   | "setup"
   | "leads"
+  | "pipeline"
   | "email"
   | "whatsapp"
   | "followups"
@@ -48,6 +51,7 @@ const NAV: Array<{ id: TabId; label: string; labelAr: string; icon: typeof Users
   { id: "scripts", label: "Script Library", labelAr: "مكتبة السكربتات", icon: FileCode2 },
   { id: "setup", label: "Setup Guide", labelAr: "دليل الإعداد", icon: ListChecks },
   { id: "leads", label: "Leads", labelAr: "العملاء المحتملون", icon: Users },
+  { id: "pipeline", label: "Pipeline", labelAr: "خط المبيعات", icon: TrendingUp },
   { id: "email", label: "Email Outreach", labelAr: "التواصل بالبريد", icon: Mail },
   { id: "whatsapp", label: "WhatsApp Outreach", labelAr: "التواصل بواتساب", icon: MessageCircle },
   { id: "followups", label: "Follow-ups", labelAr: "المتابعات", icon: Repeat },
@@ -207,6 +211,7 @@ export default function Dashboard() {
             {tab === "scripts" && <ScriptLibrary />}
             {tab === "setup" && <SetupGuide />}
             {tab === "leads" && <LeadsWorkspace />}
+            {tab === "pipeline" && <Pipeline onNavigate={setTab} />}
             {tab === "email" && <EmailOutreach onNavigate={setTab} />}
             {tab === "whatsapp" && <WhatsAppOutreach onNavigate={setTab} />}
             {tab === "followups" && <FollowUps onNavigate={setTab} />}

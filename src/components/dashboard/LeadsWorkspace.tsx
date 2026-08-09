@@ -47,6 +47,7 @@ import {
   Copy,
   Download,
   FileUp,
+  Gauge,
   Globe,
   Inbox,
   Loader2,
@@ -85,6 +86,59 @@ const STATUS_STYLE: Record<
     className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
   },
 };
+
+const SCORE_BAND_STYLE = {
+  hot: {
+    label: "Hot",
+    labelAr: "ساخن",
+    className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
+  },
+  warm: {
+    label: "Warm",
+    labelAr: "دافئ",
+    className: "border-amber-500/25 bg-amber-500/10 text-amber-700",
+  },
+  cold: {
+    label: "Cold",
+    labelAr: "بارد",
+    className: "border-border bg-muted text-muted-foreground",
+  },
+} as const;
+
+type ScoreBand = keyof typeof SCORE_BAND_STYLE;
+
+function bandOf(score: number): ScoreBand {
+  if (score >= 70) return "hot";
+  if (score >= 40) return "warm";
+  return "cold";
+}
+
+/** Deterministic 0–100 lead score with a Hot/Warm/Cold band; reasons on hover. */
+function ScoreBadge({ lead }: { lead: Lead }) {
+  const { isRtl } = useRtl();
+  const score = lead.score;
+  if (score === undefined) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const meta = SCORE_BAND_STYLE[bandOf(score)];
+  const title = (lead.scoreReasons ?? []).length
+    ? (lead.scoreReasons ?? []).join(" · ")
+    : undefined;
+  return (
+    <span
+      title={title}
+      className={cn(
+        "inline-flex cursor-help items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
+        meta.className,
+      )}
+    >
+      <span className="size-1.5 rounded-full bg-current" />
+      {score}
+      <span className="opacity-60">·</span>
+      {isRtl ? meta.labelAr : meta.label}
+    </span>
+  );
+}
 
 function PitchDialog({ lead }: { lead: Lead }) {
   const { isRtl } = useRtl();
@@ -692,6 +746,9 @@ export function LeadsWorkspace() {
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [sortBy, setSortBy] = useState<"default" | "score">("default");
+  const [rescoring, setRescoring] = useState(false);
+  const rescoreAll = useMutation(api.scoring.rescoreAll);
 
   // Runs once per session: seed() self-guards — it seeds fresh workspaces,
   // migrates the legacy fictional demo set to the real yellowpages.om sample,
@@ -710,7 +767,7 @@ export function LeadsWorkspace() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (leads ?? []).filter((lead) => {
+    const matches = (leads ?? []).filter((lead) => {
       if (category !== "all" && lead.category !== category) return false;
       if (!q) return true;
       return (
@@ -719,7 +776,36 @@ export function LeadsWorkspace() {
         lead.phone.includes(q)
       );
     });
-  }, [leads, query, category]);
+    if (sortBy === "score") {
+      matches.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    }
+    return matches;
+  }, [leads, query, category, sortBy]);
+
+  const handleRescore = async () => {
+    setRescoring(true);
+    try {
+      const result = await rescoreAll({});
+      toast.success(
+        t(
+          `Re-scored ${result.updated} lead${result.updated === 1 ? "" : "s"}`,
+          `أُعيد تقييم ${result.updated} عميلاً`,
+        ),
+        {
+          description: t(
+            "Scores reflect contactability, category, engagement and freshness.",
+            "تعكس الدرجات إمكانية التواصل والقطاع والتفاعل والحداثة.",
+          ),
+        },
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("Re-scoring failed.", "فشلت إعادة التقييم."),
+      );
+    } finally {
+      setRescoring(false);
+    }
+  };
 
   const cycleStatus = (lead: Lead) => {
     const next = STATUS_ORDER[(STATUS_ORDER.indexOf(lead.status) + 1) % STATUS_ORDER.length];
@@ -743,6 +829,14 @@ export function LeadsWorkspace() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => void handleRescore()} disabled={rescoring}>
+            {rescoring ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Gauge className="size-4" />
+            )}
+            {t("Re-score all", "إعادة تقييم الكل")}
+          </Button>
           <DiscoveryPoolDialog />
           <ImportCsvDialog />
         </div>
@@ -781,6 +875,15 @@ export function LeadsWorkspace() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as "default" | "score")}>
+              <SelectTrigger className="h-9 w-full sm:w-44">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">{t("Default order", "الترتيب الافتراضي")}</SelectItem>
+                <SelectItem value="score">{t("Score: high → low", "الدرجة: من الأعلى للأدنى")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
 
@@ -810,6 +913,7 @@ export function LeadsWorkspace() {
                     <TableHead className="min-w-40">Category</TableHead>
                     <TableHead className="min-w-36">City</TableHead>
                     <TableHead className="min-w-20">Rating</TableHead>
+                    <TableHead className="min-w-28">Score</TableHead>
                     <TableHead className="min-w-36">Phone</TableHead>
                     <TableHead className="min-w-28">Pitch</TableHead>
                     <TableHead className="min-w-32">Status</TableHead>
@@ -846,6 +950,9 @@ export function LeadsWorkspace() {
                             ({lead.reviews})
                           </span>
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <ScoreBadge lead={lead} />
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {lead.phone}

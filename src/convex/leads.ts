@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { applyScorePatch, scoredFields } from "./scoring";
 
 /** Real sample leads scraped from yellowpages.om (the live successor of the
  *  now-defunct yellowpages.com.om) — company names, phones and cities are real
@@ -155,7 +156,16 @@ export const seed = mutation({
 
     const insertSample = async () => {
       for (const lead of SAMPLE_LEADS) {
-        await ctx.db.insert("leads", { ...lead, userId });
+        await ctx.db.insert("leads", {
+          ...lead,
+          userId,
+          ...scoredFields({
+            phone: lead.phone,
+            category: lead.category,
+            status: lead.status,
+            createdAt: Date.now(),
+          }),
+        });
       }
     };
 
@@ -218,6 +228,17 @@ export const setStatus = mutation({
       ...(args.status === "sent" && args.channel
         ? { lastContactChannel: args.channel }
         : {}),
+    });
+    // Status is a scoring signal — keep the score in sync.
+    await applyScorePatch(ctx, args.id, {
+      phone: lead.phone,
+      email: lead.email,
+      emailVerified: lead.emailVerified,
+      category: lead.category,
+      status: args.status,
+      whatsappStatus: lead.whatsappStatus,
+      optedOut: lead.optedOut,
+      createdAt: lead._creationTime,
     });
   },
 });
@@ -323,6 +344,17 @@ export const setEmailVerified = mutation({
       emailVerified: args.emailVerified || undefined,
       emailVerifiedAt: args.emailVerifiedAt ?? Date.now(),
     });
+    // Email verification is a scoring signal — keep the score in sync.
+    await applyScorePatch(ctx, args.id, {
+      phone: lead.phone,
+      email: lead.email,
+      emailVerified: args.emailVerified || undefined,
+      category: lead.category,
+      status: lead.status,
+      whatsappStatus: lead.whatsappStatus,
+      optedOut: lead.optedOut,
+      createdAt: lead._creationTime,
+    });
   },
 });
 
@@ -354,6 +386,17 @@ export const setWhatsappResult = mutation({
             status: "sent" as const,
           }
         : {}),
+    });
+    // WhatsApp delivery is a scoring signal — keep the score in sync.
+    await applyScorePatch(ctx, args.id, {
+      phone: lead.phone,
+      email: lead.email,
+      emailVerified: lead.emailVerified,
+      category: lead.category,
+      status: args.whatsappStatus === "sent" || args.whatsappStatus === "delivered" ? "sent" : lead.status,
+      whatsappStatus: args.whatsappStatus ?? undefined,
+      optedOut: lead.optedOut,
+      createdAt: lead._creationTime,
     });
   },
 });
@@ -398,6 +441,7 @@ export const importLeads = mutation({
         .filter((q) => q.eq(q.field("name"), name) && q.eq(q.field("phone"), row.phone))
         .first();
       if (existing) continue;
+      const status = row.status ?? "new";
       await ctx.db.insert("leads", {
         userId,
         name,
@@ -409,7 +453,14 @@ export const importLeads = mutation({
         source: row.source ?? "CSV import",
         email: row.email?.trim() || undefined,
         pitch: row.pitch,
-        status: row.status ?? "new",
+        status,
+        ...scoredFields({
+          phone: row.phone,
+          email: row.email?.trim() || undefined,
+          category: row.category ?? "General",
+          status,
+          createdAt: Date.now(),
+        }),
       });
       inserted += 1;
     }

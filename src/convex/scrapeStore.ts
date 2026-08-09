@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { scoredFields } from "./scoring";
 
 /**
  * Shared server-side discovery pool.
@@ -126,6 +127,12 @@ export const importFromPool = mutation({
         category: row.category,
         source: "yellowpages.om (auto-scrape)",
         status: "new",
+        ...scoredFields({
+          phone: row.phone,
+          category: row.category,
+          status: "new",
+          createdAt: Date.now(),
+        }),
       });
       inserted += 1;
     }

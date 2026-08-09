@@ -14,6 +14,7 @@ import {
   Bot,
   CheckCircle2,
   Circle,
+  Coins,
   CreditCard,
   Crown,
   Mail,
@@ -21,6 +22,9 @@ import {
   Send,
   Sparkles,
   Star,
+  Target,
+  TrendingUp,
+  Trophy,
   Users,
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -49,8 +53,44 @@ export function Overview({
     ? (leads.reduce((sum, l) => sum + l.rating, 0) / leads.length).toFixed(1)
     : "—";
   const billing = useQuery(api.billing.getBillingStatus);
+  const pipeline = useQuery(api.pipeline.summary);
   const { isRtl } = useRtl();
   const t = (en: string, ar: string) => (isRtl ? ar : en);
+  const currency = isRtl ? "ر.ع." : "OMR";
+  const fmt = (n: number) => `${n.toLocaleString()} ${currency}`;
+
+  const stageBar = [
+    {
+      stage: "new" as const,
+      label: t("New", "جديد"),
+      color: "bg-muted-foreground/60",
+      count: pipeline?.counts.new ?? 0,
+    },
+    {
+      stage: "qualified" as const,
+      label: t("Qualified", "مؤهل"),
+      color: "bg-sky-500",
+      count: pipeline?.counts.qualified ?? 0,
+    },
+    {
+      stage: "negotiating" as const,
+      label: t("Negotiating", "تفاوض"),
+      color: "bg-amber-500",
+      count: pipeline?.counts.negotiating ?? 0,
+    },
+    {
+      stage: "won" as const,
+      label: t("Won", "فاز"),
+      color: "bg-emerald-500",
+      count: pipeline?.counts.won ?? 0,
+    },
+    {
+      stage: "lost" as const,
+      label: t("Lost", "خسر"),
+      color: "bg-rose-500",
+      count: pipeline?.counts.lost ?? 0,
+    },
+  ];
 
   const stats = [
     {
@@ -141,7 +181,120 @@ export function Overview({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Quick start checklist */}
+        {/* Sales pipeline */}
+      <Card className="border-border/80 shadow-sm">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base">
+              {t("Sales pipeline", "خط المبيعات")}
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => onNavigate("pipeline")}
+            >
+              <TrendingUp className="size-4" />
+              {t("Open pipeline", "فتح خط المبيعات")}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "Deal stages, values and forecasts across your workspace.",
+              "مراحل الصفقات وقيمها وتوقعاتها في مساحة عملك.",
+            )}
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-2">
+          {/* Stage distribution bar */}
+          <div className="flex flex-col justify-center gap-4">
+            {pipeline == null ? (
+              <div className="space-y-2">
+                <div className="h-3 animate-pulse rounded-full bg-muted/70" />
+                <div className="h-16 animate-pulse rounded-lg bg-muted/70" />
+              </div>
+            ) : total === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "No deals yet — qualify a lead and set a deal value in the Pipeline tab.",
+                  "لا صفقات بعد — أهّل عميلاً وحدد قيمة صفقة في تبويب خط المبيعات.",
+                )}
+              </p>
+            ) : (
+              <>
+                <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
+                  {stageBar.map(
+                    (s) =>
+                      s.count > 0 && (
+                        <div
+                          key={s.stage}
+                          className={cn(s.color, "h-full")}
+                          style={{ width: `${(s.count / total) * 100}%` }}
+                          title={`${s.label}: ${s.count}`}
+                        />
+                      ),
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {stageBar.map((s) => (
+                    <span
+                      key={s.stage}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                    >
+                      <span className={cn("size-2.5 rounded-full", s.color)} />
+                      {s.label}
+                      <span className="font-mono font-semibold text-foreground">
+                        {s.count}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Key numbers */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                icon: Target,
+                label: t("Open value", "القيمة المفتوحة"),
+                value: pipeline ? fmt(pipeline.openValue) : "…",
+              },
+              {
+                icon: TrendingUp,
+                label: t("Forecast", "التوقع"),
+                value: pipeline ? fmt(pipeline.weightedValue) : "…",
+              },
+              {
+                icon: Trophy,
+                label: t("Win rate", "معدل الفوز"),
+                value: pipeline ? `${Math.round(pipeline.winRate * 100)}%` : "…",
+              },
+              {
+                icon: Coins,
+                label: t("Won value", "قيمة المكاسب"),
+                value: pipeline ? fmt(pipeline.wonValue) : "…",
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-xl border border-border/70 bg-muted/30 p-3.5"
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <stat.icon className="size-3.5 text-primary" />
+                  {stat.label}
+                </div>
+                <p className="mt-1.5 text-lg font-bold tracking-tight">
+                  {stat.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick start checklist */}
         <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">
