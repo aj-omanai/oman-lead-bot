@@ -6,3 +6,5 @@ dist
 # repo so GitHub CI (tsc + vitest) can run on a fresh clone without a Convex
 # deployment — the standard pattern recommended by Convex docs.
 # src/convex/_generated
+.vercel
+.env*
